@@ -1082,29 +1082,11 @@ export class JsonRpcProvider extends Provider {
   }
 
   async getCheckpointContents(
-    sequence_number: number | CheckPointContentsDigest,
-  ): Promise<CheckpointContents> {
-    try {
-      const resp = await this.client.requestWithType(
-        'sui_getCheckpointContents',
-        [sequence_number],
-        CheckpointContents,
-        this.options.skipDataValidation,
-      );
-      return resp;
-    } catch (err) {
-      throw new Error(
-        `Error getting checkpoint contents with request type: ${err} for sequence number: ${sequence_number}.`,
-      );
-    }
-  }
-
-  async getCheckpointContentsByDigest(
     digest: CheckPointContentsDigest,
   ): Promise<CheckpointContents> {
     try {
       const resp = await this.client.requestWithType(
-        'sui_getCheckpointContentsByDigest',
+        'sui_getCheckpointContents',
         [digest],
         CheckpointContents,
         this.options.skipDataValidation,
@@ -1112,7 +1094,7 @@ export class JsonRpcProvider extends Provider {
       return resp;
     } catch (err) {
       throw new Error(
-        `Error getting checkpoint summary with request type: ${err} for digest: ${digest}.`,
+        `Error getting checkpoint contents with request type: ${err} for digest: ${digest}.`,
       );
     }
   }

@@ -405,7 +405,7 @@ export abstract class Provider {
    * @param sequence_number - The sequence number of the desired checkpoint contents
    */
   abstract getCheckpointContents(
-    sequenceNumber: number,
+    digest: CheckPointContentsDigest,
   ): Promise<CheckpointContents>;
 
   /**

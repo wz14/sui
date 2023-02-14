@@ -323,16 +323,7 @@
                 "authSignInfo": {
                   "epoch": 0,
                   "signature": "wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-                  "signers_map": [
-                    58,
-                    48,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "signers_map": [58, 48, 0, 0, 0, 0, 0, 0]
                 }
               },
               "effects": {
@@ -596,9 +587,7 @@
               },
               "timestampMs": 1676911928,
               "endOfEpochData": null,
-              "transactions": [
-                "4qBuxNt9KoyC4xUbY8jJMJfmonAnMgTjDG6Nq1F1jbbH"
-              ]
+              "transactions": ["4qBuxNt9KoyC4xUbY8jJMJfmonAnMgTjDG6Nq1F1jbbH"]
             }
           }
         }
@@ -1596,16 +1585,7 @@
                 "authSignInfo": {
                   "epoch": 0,
                   "signature": "wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-                  "signers_map": [
-                    58,
-                    48,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "signers_map": [58, 48, 0, 0, 0, 0, 0, 0]
                 }
               },
               "effects": {
@@ -2701,16 +2681,7 @@
                 "authSignInfo": {
                   "epoch": 0,
                   "signature": "wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-                  "signers_map": [
-                    58,
-                    48,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "signers_map": [58, 48, 0, 0, 0, 0, 0, 0]
                 }
               },
               "effects": {
@@ -3057,9 +3028,7 @@
       },
       "Balance": {
         "type": "object",
-        "required": [
-          "value"
-        ],
+        "required": ["value"],
         "properties": {
           "value": {
             "type": "integer",
@@ -3070,11 +3039,7 @@
       },
       "BalanceChangeType": {
         "type": "string",
-        "enum": [
-          "Gas",
-          "Pay",
-          "Receive"
-        ]
+        "enum": ["Gas", "Pay", "Receive"]
       },
       "Base58": {
         "type": "string"
@@ -3201,10 +3166,7 @@
       "CheckpointContents": {
         "description": "CheckpointContents are the transactions included in an upcoming checkpoint. They must have already been causally ordered. Since the causal order algorithm is the same among validators, we expect all honest validators to come up with the same order for each checkpoint content.",
         "type": "object",
-        "required": [
-          "transactions",
-          "user_signatures"
-        ],
+        "required": ["transactions", "user_signatures"],
         "properties": {
           "transactions": {
             "type": "array",
@@ -3350,10 +3312,7 @@
             "$ref": "#/components/schemas/ObjectDigest"
           },
           "lockedUntilEpoch": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "format": "uint64",
             "minimum": 0.0
           },
@@ -3367,11 +3326,7 @@
       },
       "CommitteeInfoResponse": {
         "type": "object",
-        "required": [
-          "committee_info",
-          "epoch",
-          "protocol_version"
-        ],
+        "required": ["committee_info", "epoch", "protocol_version"],
         "properties": {
           "committee_info": {
             "type": "array",
@@ -3406,9 +3361,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "Ed25519"
-            ],
+            "required": ["Ed25519"],
             "properties": {
               "Ed25519": {
                 "$ref": "#/components/schemas/Base64"
@@ -3418,9 +3371,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Secp256k1"
-            ],
+            "required": ["Secp256k1"],
             "properties": {
               "Secp256k1": {
                 "$ref": "#/components/schemas/Base64"
@@ -3430,9 +3381,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Secp256r1"
-            ],
+            "required": ["Secp256r1"],
             "properties": {
               "Secp256r1": {
                 "$ref": "#/components/schemas/Base64"
@@ -3459,9 +3408,7 @@
               },
               "dataType": {
                 "type": "string",
-                "enum": [
-                  "moveObject"
-                ]
+                "enum": ["moveObject"]
               },
               "has_public_transfer": {
                 "type": "boolean"
@@ -3476,17 +3423,11 @@
           },
           {
             "type": "object",
-            "required": [
-              "dataType",
-              "id",
-              "module_map"
-            ],
+            "required": ["dataType", "id", "module_map"],
             "properties": {
               "dataType": {
                 "type": "string",
-                "enum": [
-                  "package"
-                ]
+                "enum": ["package"]
               },
               "id": {
                 "$ref": "#/components/schemas/ObjectID"
@@ -3503,10 +3444,7 @@
       },
       "DelegatedStake": {
         "type": "object",
-        "required": [
-          "delegation_status",
-          "staked_sui"
-        ],
+        "required": ["delegation_status", "staked_sui"],
         "properties": {
           "delegation_status": {
             "$ref": "#/components/schemas/DelegationStatus"
@@ -3545,15 +3483,11 @@
         "oneOf": [
           {
             "type": "string",
-            "enum": [
-              "Pending"
-            ]
+            "enum": ["Pending"]
           },
           {
             "type": "object",
-            "required": [
-              "Active"
-            ],
+            "required": ["Active"],
             "properties": {
               "Active": {
                 "$ref": "#/components/schemas/Delegation"
@@ -3566,10 +3500,7 @@
       "DevInspectResults": {
         "description": "The response from processing a dev inspect transaction",
         "type": "object",
-        "required": [
-          "effects",
-          "results"
-        ],
+        "required": ["effects", "results"],
         "properties": {
           "effects": {
             "description": "Summary of effects that likely would be generated if the transaction is actually run. Note however, that not all dev-inspect transactions are actually usable as transactions so it might not be possible actually generate these effects from a normal transaction.",
@@ -3622,10 +3553,7 @@
       },
       "DynamicFieldType": {
         "type": "string",
-        "enum": [
-          "DynamicField",
-          "DynamicObject"
-        ]
+        "enum": ["DynamicField", "DynamicObject"]
       },
       "Ed25519SuiSignature": {
         "$ref": "#/components/schemas/Base64"
@@ -3634,9 +3562,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "certified"
-            ],
+            "required": ["certified"],
             "properties": {
               "certified": {
                 "$ref": "#/components/schemas/SuiAuthorityStrongQuorumSignInfo"
@@ -3646,9 +3572,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "checkpointed"
-            ],
+            "required": ["checkpointed"],
             "properties": {
               "checkpointed": {
                 "type": "array",
@@ -3674,10 +3598,7 @@
       },
       "EndOfEpochData": {
         "type": "object",
-        "required": [
-          "next_epoch_committee",
-          "next_epoch_protocol_version"
-        ],
+        "required": ["next_epoch_committee", "next_epoch_protocol_version"],
         "properties": {
           "next_epoch_committee": {
             "description": "next_epoch_committee is `Some` if and only if the current checkpoint is the last checkpoint of an epoch. Therefore next_epoch_committee can be used to pick the last checkpoint of an epoch, which is often useful to get epoch level summary stats like total gas cost of an epoch, or the total number of transactions from genesis to the end of an epoch. The committee is stored as a vector of validator pub key and stake pairs. The vector should be sorted based on the Committee data structure.",
@@ -3711,10 +3632,7 @@
       "Entry_for_SuiAddress_and_VecSet_for_SuiAddress": {
         "description": "Rust version of the Move sui::vec_map::Entry type",
         "type": "object",
-        "required": [
-          "key",
-          "value"
-        ],
+        "required": ["key", "value"],
         "properties": {
           "key": {
             "$ref": "#/components/schemas/SuiAddress"
@@ -3727,10 +3645,7 @@
       "Entry_for_ValidatorPair_and_TableVec": {
         "description": "Rust version of the Move sui::vec_map::Entry type",
         "type": "object",
-        "required": [
-          "key",
-          "value"
-        ],
+        "required": ["key", "value"],
         "properties": {
           "key": {
             "$ref": "#/components/schemas/ValidatorPair"
@@ -3745,9 +3660,7 @@
           {
             "description": "Move-specific event",
             "type": "object",
-            "required": [
-              "moveEvent"
-            ],
+            "required": ["moveEvent"],
             "properties": {
               "moveEvent": {
                 "type": "object",
@@ -3792,18 +3705,11 @@
           {
             "description": "Module published",
             "type": "object",
-            "required": [
-              "publish"
-            ],
+            "required": ["publish"],
             "properties": {
               "publish": {
                 "type": "object",
-                "required": [
-                  "digest",
-                  "packageId",
-                  "sender",
-                  "version"
-                ],
+                "required": ["digest", "packageId", "sender", "version"],
                 "properties": {
                   "digest": {
                     "$ref": "#/components/schemas/ObjectDigest"
@@ -3825,9 +3731,7 @@
           {
             "description": "Coin balance changing event",
             "type": "object",
-            "required": [
-              "coinBalanceChange"
-            ],
+            "required": ["coinBalanceChange"],
             "properties": {
               "coinBalanceChange": {
                 "type": "object",
@@ -3879,9 +3783,7 @@
           {
             "description": "Epoch change",
             "type": "object",
-            "required": [
-              "epochChange"
-            ],
+            "required": ["epochChange"],
             "properties": {
               "epochChange": {
                 "type": "integer",
@@ -3894,9 +3796,7 @@
           {
             "description": "New checkpoint",
             "type": "object",
-            "required": [
-              "checkpoint"
-            ],
+            "required": ["checkpoint"],
             "properties": {
               "checkpoint": {
                 "type": "integer",
@@ -3909,9 +3809,7 @@
           {
             "description": "Transfer objects to new address / wrap in another object / coin",
             "type": "object",
-            "required": [
-              "transferObject"
-            ],
+            "required": ["transferObject"],
             "properties": {
               "transferObject": {
                 "type": "object",
@@ -3954,9 +3852,7 @@
           {
             "description": "Object mutated.",
             "type": "object",
-            "required": [
-              "mutateObject"
-            ],
+            "required": ["mutateObject"],
             "properties": {
               "mutateObject": {
                 "type": "object",
@@ -3995,9 +3891,7 @@
           {
             "description": "Delete object",
             "type": "object",
-            "required": [
-              "deleteObject"
-            ],
+            "required": ["deleteObject"],
             "properties": {
               "deleteObject": {
                 "type": "object",
@@ -4032,9 +3926,7 @@
           {
             "description": "New object creation",
             "type": "object",
-            "required": [
-              "newObject"
-            ],
+            "required": ["newObject"],
             "properties": {
               "newObject": {
                 "type": "object",
@@ -4078,12 +3970,7 @@
       },
       "EventEnvelope": {
         "type": "object",
-        "required": [
-          "event",
-          "id",
-          "timestamp",
-          "txDigest"
-        ],
+        "required": ["event", "id", "timestamp", "txDigest"],
         "properties": {
           "event": {
             "description": "Specific event type",
@@ -4121,9 +4008,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "Package"
-            ],
+            "required": ["Package"],
             "properties": {
               "Package": {
                 "$ref": "#/components/schemas/ObjectID"
@@ -4133,9 +4018,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Module"
-            ],
+            "required": ["Module"],
             "properties": {
               "Module": {
                 "type": "string"
@@ -4146,9 +4029,7 @@
           {
             "description": "Move StructTag string value of the event type e.g. `0x2::devnet_nft::MintNFTEvent`",
             "type": "object",
-            "required": [
-              "MoveEventType"
-            ],
+            "required": ["MoveEventType"],
             "properties": {
               "MoveEventType": {
                 "type": "string"
@@ -4158,16 +4039,11 @@
           },
           {
             "type": "object",
-            "required": [
-              "MoveEventField"
-            ],
+            "required": ["MoveEventField"],
             "properties": {
               "MoveEventField": {
                 "type": "object",
-                "required": [
-                  "path",
-                  "value"
-                ],
+                "required": ["path", "value"],
                 "properties": {
                   "path": {
                     "type": "string"
@@ -4180,9 +4056,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "SenderAddress"
-            ],
+            "required": ["SenderAddress"],
             "properties": {
               "SenderAddress": {
                 "$ref": "#/components/schemas/SuiAddress"
@@ -4192,9 +4066,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "EventType"
-            ],
+            "required": ["EventType"],
             "properties": {
               "EventType": {
                 "$ref": "#/components/schemas/EventType"
@@ -4204,9 +4076,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "ObjectId"
-            ],
+            "required": ["ObjectId"],
             "properties": {
               "ObjectId": {
                 "$ref": "#/components/schemas/ObjectID"
@@ -4216,9 +4086,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "All"
-            ],
+            "required": ["All"],
             "properties": {
               "All": {
                 "type": "array",
@@ -4231,9 +4099,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Any"
-            ],
+            "required": ["Any"],
             "properties": {
               "Any": {
                 "type": "array",
@@ -4246,9 +4112,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "And"
-            ],
+            "required": ["And"],
             "properties": {
               "And": {
                 "type": "array",
@@ -4268,9 +4132,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Or"
-            ],
+            "required": ["Or"],
             "properties": {
               "Or": {
                 "type": "array",
@@ -4293,10 +4155,7 @@
       "EventID": {
         "description": "Unique ID of a Sui Event, the ID is a combination of tx seq number and event seq number, the ID is local to this particular fullnode and will be different from other fullnode.",
         "type": "object",
-        "required": [
-          "eventSeq",
-          "txDigest"
-        ],
+        "required": ["eventSeq", "txDigest"],
         "properties": {
           "eventSeq": {
             "type": "integer",
@@ -4312,16 +4171,12 @@
           {
             "description": "Return all events.",
             "type": "string",
-            "enum": [
-              "All"
-            ]
+            "enum": ["All"]
           },
           {
             "description": "Return events emitted by the given transaction.",
             "type": "object",
-            "required": [
-              "Transaction"
-            ],
+            "required": ["Transaction"],
             "properties": {
               "Transaction": {
                 "$ref": "#/components/schemas/TransactionDigest"
@@ -4332,16 +4187,11 @@
           {
             "description": "Return events emitted in a specified Move module",
             "type": "object",
-            "required": [
-              "MoveModule"
-            ],
+            "required": ["MoveModule"],
             "properties": {
               "MoveModule": {
                 "type": "object",
-                "required": [
-                  "module",
-                  "package"
-                ],
+                "required": ["module", "package"],
                 "properties": {
                   "module": {
                     "description": "the module name",
@@ -4363,9 +4213,7 @@
           {
             "description": "Return events with the given move event struct name",
             "type": "object",
-            "required": [
-              "MoveEvent"
-            ],
+            "required": ["MoveEvent"],
             "properties": {
               "MoveEvent": {
                 "type": "string"
@@ -4375,9 +4223,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "EventType"
-            ],
+            "required": ["EventType"],
             "properties": {
               "EventType": {
                 "$ref": "#/components/schemas/EventType"
@@ -4388,9 +4234,7 @@
           {
             "description": "Query by sender address.",
             "type": "object",
-            "required": [
-              "Sender"
-            ],
+            "required": ["Sender"],
             "properties": {
               "Sender": {
                 "$ref": "#/components/schemas/SuiAddress"
@@ -4401,9 +4245,7 @@
           {
             "description": "Query by recipient address.",
             "type": "object",
-            "required": [
-              "Recipient"
-            ],
+            "required": ["Recipient"],
             "properties": {
               "Recipient": {
                 "$ref": "#/components/schemas/Owner"
@@ -4414,9 +4256,7 @@
           {
             "description": "Return events associated with the given object",
             "type": "object",
-            "required": [
-              "Object"
-            ],
+            "required": ["Object"],
             "properties": {
               "Object": {
                 "$ref": "#/components/schemas/ObjectID"
@@ -4427,16 +4267,11 @@
           {
             "description": "Return events emitted in [start_time, end_time] interval",
             "type": "object",
-            "required": [
-              "TimeRange"
-            ],
+            "required": ["TimeRange"],
             "properties": {
               "TimeRange": {
                 "type": "object",
-                "required": [
-                  "endTime",
-                  "startTime"
-                ],
+                "required": ["endTime", "startTime"],
                 "properties": {
                   "endTime": {
                     "description": "right endpoint of time interval, milliseconds since epoch, exclusive",
@@ -4463,81 +4298,57 @@
           {
             "description": "Transaction level event Move-specific event",
             "type": "string",
-            "enum": [
-              "MoveEvent"
-            ]
+            "enum": ["MoveEvent"]
           },
           {
             "description": "Module published",
             "type": "string",
-            "enum": [
-              "Publish"
-            ]
+            "enum": ["Publish"]
           },
           {
             "description": "Coin balance changing event",
             "type": "string",
-            "enum": [
-              "CoinBalanceChange"
-            ]
+            "enum": ["CoinBalanceChange"]
           },
           {
             "description": "Epoch change",
             "type": "string",
-            "enum": [
-              "EpochChange"
-            ]
+            "enum": ["EpochChange"]
           },
           {
             "description": "New checkpoint",
             "type": "string",
-            "enum": [
-              "Checkpoint"
-            ]
+            "enum": ["Checkpoint"]
           },
           {
             "description": "Object level event Transfer objects to new address / wrap in another object",
             "type": "string",
-            "enum": [
-              "TransferObject"
-            ]
+            "enum": ["TransferObject"]
           },
           {
             "description": "Object level event Object mutated.",
             "type": "string",
-            "enum": [
-              "MutateObject"
-            ]
+            "enum": ["MutateObject"]
           },
           {
             "description": "Delete object",
             "type": "string",
-            "enum": [
-              "DeleteObject"
-            ]
+            "enum": ["DeleteObject"]
           },
           {
             "description": "New object creation",
             "type": "string",
-            "enum": [
-              "NewObject"
-            ]
+            "enum": ["NewObject"]
           }
         ]
       },
       "ExecuteTransactionRequestType": {
         "type": "string",
-        "enum": [
-          "WaitForEffectsCert",
-          "WaitForLocalExecution"
-        ]
+        "enum": ["WaitForEffectsCert", "WaitForLocalExecution"]
       },
       "ExecutionDigests": {
         "type": "object",
-        "required": [
-          "effects",
-          "transaction"
-        ],
+        "required": ["effects", "transaction"],
         "properties": {
           "effects": {
             "$ref": "#/components/schemas/TransactionEffectsDigest"
@@ -4551,33 +4362,24 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "status"
-            ],
+            "required": ["status"],
             "properties": {
               "status": {
                 "type": "string",
-                "enum": [
-                  "success"
-                ]
+                "enum": ["success"]
               }
             }
           },
           {
             "type": "object",
-            "required": [
-              "error",
-              "status"
-            ],
+            "required": ["error", "status"],
             "properties": {
               "error": {
                 "type": "string"
               },
               "status": {
                 "type": "string",
-                "enum": [
-                  "failure"
-                ]
+                "enum": ["failure"]
               }
             }
           }
@@ -4585,11 +4387,7 @@
       },
       "FinalizedEffects": {
         "type": "object",
-        "required": [
-          "effects",
-          "finalityInfo",
-          "transactionEffectsDigest"
-        ],
+        "required": ["effects", "finalityInfo", "transactionEffectsDigest"],
         "properties": {
           "effects": {
             "$ref": "#/components/schemas/TransactionEffects"
@@ -4604,11 +4402,7 @@
       },
       "GasCostSummary": {
         "type": "object",
-        "required": [
-          "computationCost",
-          "storageCost",
-          "storageRebate"
-        ],
+        "required": ["computationCost", "storageCost", "storageRebate"],
         "properties": {
           "computationCost": {
             "type": "integer",
@@ -4629,12 +4423,7 @@
       },
       "GasData": {
         "type": "object",
-        "required": [
-          "budget",
-          "owner",
-          "payment",
-          "price"
-        ],
+        "required": ["budget", "owner", "payment", "price"],
         "properties": {
           "budget": {
             "type": "integer",
@@ -4659,9 +4448,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "MultiSig"
-            ],
+            "required": ["MultiSig"],
             "properties": {
               "MultiSig": {
                 "$ref": "#/components/schemas/MultiSig"
@@ -4671,9 +4458,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Signature"
-            ],
+            "required": ["Signature"],
             "properties": {
               "Signature": {
                 "$ref": "#/components/schemas/Signature"
@@ -4691,9 +4476,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "MovePackage"
-            ],
+            "required": ["MovePackage"],
             "properties": {
               "MovePackage": {
                 "$ref": "#/components/schemas/ObjectID"
@@ -4703,9 +4486,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "ImmOrOwnedMoveObject"
-            ],
+            "required": ["ImmOrOwnedMoveObject"],
             "properties": {
               "ImmOrOwnedMoveObject": {
                 "$ref": "#/components/schemas/ObjectRef"
@@ -4715,16 +4496,11 @@
           },
           {
             "type": "object",
-            "required": [
-              "SharedMoveObject"
-            ],
+            "required": ["SharedMoveObject"],
             "properties": {
               "SharedMoveObject": {
                 "type": "object",
-                "required": [
-                  "id",
-                  "initial_shared_version"
-                ],
+                "required": ["id", "initial_shared_version"],
                 "properties": {
                   "id": {
                     "$ref": "#/components/schemas/ObjectID"
@@ -4746,12 +4522,7 @@
       "LinkedTable_for_ObjectID": {
         "description": "Rust version of the Move sui::linked_table::LinkedTable type. Putting it here since we only use it in sui_system in the framework.",
         "type": "object",
-        "required": [
-          "head",
-          "id",
-          "size",
-          "tail"
-        ],
+        "required": ["head", "id", "size", "tail"],
         "properties": {
           "head": {
             "$ref": "#/components/schemas/MoveOption_for_ObjectID"
@@ -4771,11 +4542,7 @@
       },
       "MoveCall": {
         "type": "object",
-        "required": [
-          "function",
-          "module",
-          "package"
-        ],
+        "required": ["function", "module", "package"],
         "properties": {
           "arguments": {
             "type": "array",
@@ -4802,12 +4569,7 @@
       },
       "MoveCallParams": {
         "type": "object",
-        "required": [
-          "arguments",
-          "function",
-          "module",
-          "packageObjectId"
-        ],
+        "required": ["arguments", "function", "module", "packageObjectId"],
         "properties": {
           "arguments": {
             "type": "array",
@@ -4837,15 +4599,11 @@
         "oneOf": [
           {
             "type": "string",
-            "enum": [
-              "Pure"
-            ]
+            "enum": ["Pure"]
           },
           {
             "type": "object",
-            "required": [
-              "Object"
-            ],
+            "required": ["Object"],
             "properties": {
               "Object": {
                 "$ref": "#/components/schemas/ObjectValueKind"
@@ -4858,9 +4616,7 @@
       "MoveOption_for_ObjectID": {
         "description": "Rust version of the Move std::option::Option type. Putting it in this file because it's only used here.",
         "type": "object",
-        "required": [
-          "vec"
-        ],
+        "required": ["vec"],
         "properties": {
           "vec": {
             "type": "array",
@@ -4872,9 +4628,7 @@
       },
       "MovePackage": {
         "type": "object",
-        "required": [
-          "disassembled"
-        ],
+        "required": ["disassembled"],
         "properties": {
           "disassembled": {
             "type": "object",
@@ -4892,10 +4646,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "fields",
-              "type"
-            ],
+            "required": ["fields", "type"],
             "properties": {
               "fields": {
                 "type": "object",
@@ -4940,9 +4691,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "id"
-            ],
+            "required": ["id"],
             "properties": {
               "id": {
                 "$ref": "#/components/schemas/ObjectID"
@@ -4967,11 +4716,7 @@
       "MultiSig": {
         "description": "The struct that contains signatures and public keys necessary for authenticating a MultiSig.",
         "type": "object",
-        "required": [
-          "bitmap",
-          "multisig_pk",
-          "sigs"
-        ],
+        "required": ["bitmap", "multisig_pk", "sigs"],
         "properties": {
           "bitmap": {
             "description": "A bitmap that indicates the position of which public key the signature should be authenticated with.",
@@ -5001,10 +4746,7 @@
       "MultiSigPublicKey": {
         "description": "The struct that contains the public key used for authenticating a MultiSig.",
         "type": "object",
-        "required": [
-          "pk_map",
-          "threshold"
-        ],
+        "required": ["pk_map", "threshold"],
         "properties": {
           "pk_map": {
             "description": "A list of public key and its corresponding weight.",
@@ -5119,55 +4861,40 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "details",
-              "status"
-            ],
+            "required": ["details", "status"],
             "properties": {
               "details": {
                 "$ref": "#/components/schemas/Object"
               },
               "status": {
                 "type": "string",
-                "enum": [
-                  "Exists"
-                ]
+                "enum": ["Exists"]
               }
             }
           },
           {
             "type": "object",
-            "required": [
-              "details",
-              "status"
-            ],
+            "required": ["details", "status"],
             "properties": {
               "details": {
                 "$ref": "#/components/schemas/ObjectID"
               },
               "status": {
                 "type": "string",
-                "enum": [
-                  "NotExists"
-                ]
+                "enum": ["NotExists"]
               }
             }
           },
           {
             "type": "object",
-            "required": [
-              "details",
-              "status"
-            ],
+            "required": ["details", "status"],
             "properties": {
               "details": {
                 "$ref": "#/components/schemas/ObjectRef"
               },
               "status": {
                 "type": "string",
-                "enum": [
-                  "Deleted"
-                ]
+                "enum": ["Deleted"]
               }
             }
           }
@@ -5175,11 +4902,7 @@
       },
       "ObjectRef": {
         "type": "object",
-        "required": [
-          "digest",
-          "objectId",
-          "version"
-        ],
+        "required": ["digest", "objectId", "version"],
         "properties": {
           "digest": {
             "description": "Base64 string representing the object digest",
@@ -5209,18 +4932,11 @@
       },
       "ObjectValueKind": {
         "type": "string",
-        "enum": [
-          "ByImmutableReference",
-          "ByMutableReference",
-          "ByValue"
-        ]
+        "enum": ["ByImmutableReference", "ByMutableReference", "ByValue"]
       },
       "OwnedObjectRef": {
         "type": "object",
-        "required": [
-          "owner",
-          "reference"
-        ],
+        "required": ["owner", "reference"],
         "properties": {
           "owner": {
             "$ref": "#/components/schemas/Owner"
@@ -5235,9 +4951,7 @@
           {
             "description": "Object is exclusively owned by a single address, and is mutable.",
             "type": "object",
-            "required": [
-              "AddressOwner"
-            ],
+            "required": ["AddressOwner"],
             "properties": {
               "AddressOwner": {
                 "$ref": "#/components/schemas/SuiAddress"
@@ -5248,9 +4962,7 @@
           {
             "description": "Object is exclusively owned by a single object, and is mutable. The object ID is converted to SuiAddress as SuiAddress is universal.",
             "type": "object",
-            "required": [
-              "ObjectOwner"
-            ],
+            "required": ["ObjectOwner"],
             "properties": {
               "ObjectOwner": {
                 "$ref": "#/components/schemas/SuiAddress"
@@ -5261,15 +4973,11 @@
           {
             "description": "Object is shared, can be used by any address, and is mutable.",
             "type": "object",
-            "required": [
-              "Shared"
-            ],
+            "required": ["Shared"],
             "properties": {
               "Shared": {
                 "type": "object",
-                "required": [
-                  "initial_shared_version"
-                ],
+                "required": ["initial_shared_version"],
                 "properties": {
                   "initial_shared_version": {
                     "description": "The version at which the object became shared",
@@ -5287,17 +4995,13 @@
           {
             "description": "Object is immutable, and hence ownership doesn't matter.",
             "type": "string",
-            "enum": [
-              "Immutable"
-            ]
+            "enum": ["Immutable"]
           }
         ]
       },
       "Page_for_Coin_and_ObjectID": {
         "type": "object",
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "properties": {
           "data": {
             "type": "array",
@@ -5319,9 +5023,7 @@
       },
       "Page_for_DynamicFieldInfo_and_ObjectID": {
         "type": "object",
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "properties": {
           "data": {
             "type": "array",
@@ -5343,9 +5045,7 @@
       },
       "Page_for_EventEnvelope_and_EventID": {
         "type": "object",
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "properties": {
           "data": {
             "type": "array",
@@ -5367,9 +5067,7 @@
       },
       "Page_for_TransactionDigest_and_TransactionDigest": {
         "type": "object",
-        "required": [
-          "data"
-        ],
+        "required": ["data"],
         "properties": {
           "data": {
             "type": "array",
@@ -5391,11 +5089,7 @@
       },
       "Pay": {
         "type": "object",
-        "required": [
-          "amounts",
-          "coins",
-          "recipients"
-        ],
+        "required": ["amounts", "coins", "recipients"],
         "properties": {
           "amounts": {
             "description": "The amounts each recipient will receive. Must be the same length as amounts",
@@ -5425,10 +5119,7 @@
       "PayAllSui": {
         "description": "Send all SUI coins to one recipient. only for SUI coin and does not require a separate gas coin object either. Specifically, what pay_all_sui does are: 1. accumulate all SUI from input coins and deposit all SUI to the first input coin 2. transfer the updated first coin to the recipient and also use this first coin as gas coin object. 3. the balance of the first input coin after tx is sum(input_coins) - actual_gas_cost. 4. all other input coins other than the first are deleted.",
         "type": "object",
-        "required": [
-          "coins",
-          "recipient"
-        ],
+        "required": ["coins", "recipient"],
         "properties": {
           "coins": {
             "description": "The coins to be used for payment",
@@ -5450,11 +5141,7 @@
       "PaySui": {
         "description": "Send SUI coins to a list of addresses, following a list of amounts. only for SUI coin and does not require a separate gas coin object. Specifically, what pay_sui does are: 1. debit each input_coin to create new coin following the order of amounts and assign it to the corresponding recipient. 2. accumulate all residual SUI from input coins left and deposit all SUI to the first input coin, then use the first input coin as the gas coin object. 3. the balance of the first input coin after tx is sum(input_coins) - sum(amounts) - actual_gas_cost 4. all other input coints other than the first one are deleted.",
         "type": "object",
-        "required": [
-          "amounts",
-          "coins",
-          "recipients"
-        ],
+        "required": ["amounts", "coins", "recipients"],
         "properties": {
           "amounts": {
             "description": "The amounts each recipient will receive. Must be the same length as amounts",
@@ -5490,9 +5177,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "Ed25519"
-            ],
+            "required": ["Ed25519"],
             "properties": {
               "Ed25519": {
                 "$ref": "#/components/schemas/Base64"
@@ -5502,9 +5187,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Secp256k1"
-            ],
+            "required": ["Secp256k1"],
             "properties": {
               "Secp256k1": {
                 "$ref": "#/components/schemas/Base64"
@@ -5514,9 +5197,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Secp256r1"
-            ],
+            "required": ["Secp256r1"],
             "properties": {
               "Secp256r1": {
                 "$ref": "#/components/schemas/Base64"
@@ -5530,9 +5211,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "transferObjectRequestParams"
-            ],
+            "required": ["transferObjectRequestParams"],
             "properties": {
               "transferObjectRequestParams": {
                 "$ref": "#/components/schemas/TransferObjectParams"
@@ -5542,9 +5221,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "moveCallRequestParams"
-            ],
+            "required": ["moveCallRequestParams"],
             "properties": {
               "moveCallRequestParams": {
                 "$ref": "#/components/schemas/MoveCallParams"
@@ -5558,9 +5235,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "Ok"
-            ],
+            "required": ["Ok"],
             "properties": {
               "Ok": {
                 "type": "array",
@@ -5584,9 +5259,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Err"
-            ],
+            "required": ["Err"],
             "properties": {
               "Err": {
                 "type": "string"
@@ -5618,9 +5291,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "Ed25519SuiSignature"
-            ],
+            "required": ["Ed25519SuiSignature"],
             "properties": {
               "Ed25519SuiSignature": {
                 "$ref": "#/components/schemas/Ed25519SuiSignature"
@@ -5630,9 +5301,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Secp256k1SuiSignature"
-            ],
+            "required": ["Secp256k1SuiSignature"],
             "properties": {
               "Secp256k1SuiSignature": {
                 "$ref": "#/components/schemas/Secp256k1SuiSignature"
@@ -5642,9 +5311,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Secp256r1SuiSignature"
-            ],
+            "required": ["Secp256r1SuiSignature"],
             "properties": {
               "Secp256r1SuiSignature": {
                 "$ref": "#/components/schemas/Secp256r1SuiSignature"
@@ -5656,11 +5323,7 @@
       },
       "StakeSubsidy": {
         "type": "object",
-        "required": [
-          "balance",
-          "current_epoch_amount",
-          "epoch_counter"
-        ],
+        "required": ["balance", "current_epoch_amount", "epoch_counter"],
         "properties": {
           "balance": {
             "$ref": "#/components/schemas/Balance"
@@ -5704,10 +5367,7 @@
             "$ref": "#/components/schemas/Balance"
           },
           "sui_token_lock": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "format": "uint64",
             "minimum": 0.0
           },
@@ -5761,11 +5421,7 @@
       },
       "SuiAuthorityStrongQuorumSignInfo": {
         "type": "object",
-        "required": [
-          "epoch",
-          "signature",
-          "signers_map"
-        ],
+        "required": ["epoch", "signature", "signers_map"],
         "properties": {
           "epoch": {
             "type": "integer",
@@ -5782,13 +5438,7 @@
       },
       "SuiChangeEpoch": {
         "type": "object",
-        "required": [
-          "computation_charge",
-          "epoch",
-          "epoch_start_timestamp_ms",
-          "storage_charge",
-          "storage_rebate"
-        ],
+        "required": ["computation_charge", "epoch", "storage_charge"],
         "properties": {
           "computation_charge": {
             "type": "integer",
@@ -5819,12 +5469,7 @@
       },
       "SuiCoinMetadata": {
         "type": "object",
-        "required": [
-          "decimals",
-          "description",
-          "name",
-          "symbol"
-        ],
+        "required": ["decimals", "description", "name", "symbol"],
         "properties": {
           "decimals": {
             "description": "Number of decimal places the coin uses.",
@@ -5838,10 +5483,7 @@
           },
           "iconUrl": {
             "description": "URL for the token logo",
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "id": {
             "description": "Object id for the CoinMetadata object",
@@ -5866,9 +5508,7 @@
       },
       "SuiConsensusCommitPrologue": {
         "type": "object",
-        "required": [
-          "checkpoint_start_timestamp_ms"
-        ],
+        "required": ["checkpoint_start_timestamp_ms"],
         "properties": {
           "checkpoint_start_timestamp_ms": {
             "type": "integer",
@@ -5879,10 +5519,7 @@
       },
       "SuiExecuteTransactionResponse": {
         "type": "object",
-        "required": [
-          "confirmed_local_execution",
-          "effects"
-        ],
+        "required": ["confirmed_local_execution", "effects"],
         "properties": {
           "certificate": {
             "anyOf": [
@@ -5958,9 +5595,7 @@
       },
       "SuiGenesisTransaction": {
         "type": "object",
-        "required": [
-          "objects"
-        ],
+        "required": ["objects"],
         "properties": {
           "objects": {
             "type": "array",
@@ -5973,18 +5608,11 @@
       "SuiJsonValue": {},
       "SuiMoveAbility": {
         "type": "string",
-        "enum": [
-          "Copy",
-          "Drop",
-          "Store",
-          "Key"
-        ]
+        "enum": ["Copy", "Drop", "Store", "Key"]
       },
       "SuiMoveAbilitySet": {
         "type": "object",
-        "required": [
-          "abilities"
-        ],
+        "required": ["abilities"],
         "properties": {
           "abilities": {
             "type": "array",
@@ -5996,10 +5624,7 @@
       },
       "SuiMoveModuleId": {
         "type": "object",
-        "required": [
-          "address",
-          "name"
-        ],
+        "required": ["address", "name"],
         "properties": {
           "address": {
             "type": "string"
@@ -6011,10 +5636,7 @@
       },
       "SuiMoveNormalizedField": {
         "type": "object",
-        "required": [
-          "name",
-          "type_"
-        ],
+        "required": ["name", "type_"],
         "properties": {
           "name": {
             "type": "string"
@@ -6104,11 +5726,7 @@
       },
       "SuiMoveNormalizedStruct": {
         "type": "object",
-        "required": [
-          "abilities",
-          "fields",
-          "type_parameters"
-        ],
+        "required": ["abilities", "fields", "type_parameters"],
         "properties": {
           "abilities": {
             "$ref": "#/components/schemas/SuiMoveAbilitySet"
@@ -6145,18 +5763,11 @@
           },
           {
             "type": "object",
-            "required": [
-              "Struct"
-            ],
+            "required": ["Struct"],
             "properties": {
               "Struct": {
                 "type": "object",
-                "required": [
-                  "address",
-                  "module",
-                  "name",
-                  "type_arguments"
-                ],
+                "required": ["address", "module", "name", "type_arguments"],
                 "properties": {
                   "address": {
                     "type": "string"
@@ -6180,9 +5791,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Vector"
-            ],
+            "required": ["Vector"],
             "properties": {
               "Vector": {
                 "$ref": "#/components/schemas/SuiMoveNormalizedType"
@@ -6192,9 +5801,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "TypeParameter"
-            ],
+            "required": ["TypeParameter"],
             "properties": {
               "TypeParameter": {
                 "type": "integer",
@@ -6206,9 +5813,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "Reference"
-            ],
+            "required": ["Reference"],
             "properties": {
               "Reference": {
                 "$ref": "#/components/schemas/SuiMoveNormalizedType"
@@ -6218,9 +5823,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "MutableReference"
-            ],
+            "required": ["MutableReference"],
             "properties": {
               "MutableReference": {
                 "$ref": "#/components/schemas/SuiMoveNormalizedType"
@@ -6232,10 +5835,7 @@
       },
       "SuiMoveStructTypeParameter": {
         "type": "object",
-        "required": [
-          "constraints",
-          "is_phantom"
-        ],
+        "required": ["constraints", "is_phantom"],
         "properties": {
           "constraints": {
             "$ref": "#/components/schemas/SuiMoveAbilitySet"
@@ -6247,18 +5847,11 @@
       },
       "SuiMoveVisibility": {
         "type": "string",
-        "enum": [
-          "Private",
-          "Public",
-          "Friend"
-        ]
+        "enum": ["Private", "Public", "Friend"]
       },
       "SuiParsedMergeCoinResponse": {
         "type": "object",
-        "required": [
-          "updatedCoin",
-          "updatedGas"
-        ],
+        "required": ["updatedCoin", "updatedGas"],
         "properties": {
           "updatedCoin": {
             "description": "The updated original coin object after merge",
@@ -6280,11 +5873,7 @@
       },
       "SuiParsedPublishResponse": {
         "type": "object",
-        "required": [
-          "createdObjects",
-          "package",
-          "updatedGas"
-        ],
+        "required": ["createdObjects", "package", "updatedGas"],
         "properties": {
           "createdObjects": {
             "description": "List of Move objects created as part of running the module initializers in the package",
@@ -6313,11 +5902,7 @@
       },
       "SuiParsedSplitCoinResponse": {
         "type": "object",
-        "required": [
-          "newCoins",
-          "updatedCoin",
-          "updatedGas"
-        ],
+        "required": ["newCoins", "updatedCoin", "updatedGas"],
         "properties": {
           "newCoins": {
             "description": "All the newly created coin objects generated from the split",
@@ -6348,9 +5933,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "Publish"
-            ],
+            "required": ["Publish"],
             "properties": {
               "Publish": {
                 "$ref": "#/components/schemas/SuiParsedPublishResponse"
@@ -6360,9 +5943,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "MergeCoin"
-            ],
+            "required": ["MergeCoin"],
             "properties": {
               "MergeCoin": {
                 "$ref": "#/components/schemas/SuiParsedMergeCoinResponse"
@@ -6372,9 +5953,7 @@
           },
           {
             "type": "object",
-            "required": [
-              "SplitCoin"
-            ],
+            "required": ["SplitCoin"],
             "properties": {
               "SplitCoin": {
                 "$ref": "#/components/schemas/SuiParsedSplitCoinResponse"
@@ -6453,16 +6032,12 @@
           {
             "description": "Check that the object is committed by the consensus.",
             "type": "string",
-            "enum": [
-              "ConsensusCommitted"
-            ]
+            "enum": ["ConsensusCommitted"]
           },
           {
             "description": "Check that the object is committed using the effects certificate.",
             "type": "object",
-            "required": [
-              "FastPathCommitted"
-            ],
+            "required": ["FastPathCommitted"],
             "properties": {
               "FastPathCommitted": {
                 "$ref": "#/components/schemas/FinalizedEffects"
@@ -6474,9 +6049,7 @@
       },
       "SuiTBlsSignRandomnessObjectResponse": {
         "type": "object",
-        "required": [
-          "signature"
-        ],
+        "required": ["signature"],
         "properties": {
           "signature": {
             "$ref": "#/components/schemas/Base64"
@@ -6485,9 +6058,7 @@
       },
       "SuiTransactionAuthSignersResponse": {
         "type": "object",
-        "required": [
-          "signers"
-        ],
+        "required": ["signers"],
         "properties": {
           "signers": {
             "type": "array",
@@ -6502,35 +6073,25 @@
           {
             "description": "Regular Sui Transactions that are committed on chain",
             "type": "string",
-            "enum": [
-              "Commit"
-            ]
+            "enum": ["Commit"]
           },
           {
             "description": "Simulated transaction that allows calling any Move function with arbitrary values.",
             "type": "string",
-            "enum": [
-              "DevInspect"
-            ]
+            "enum": ["DevInspect"]
           }
         ]
       },
       "SuiTransactionResponse": {
         "type": "object",
-        "required": [
-          "certificate",
-          "effects"
-        ],
+        "required": ["certificate", "effects"],
         "properties": {
           "certificate": {
             "$ref": "#/components/schemas/CertifiedTransaction"
           },
           "checkpoint": {
             "description": "The checkpoint number when this transaction was included and hence finalized. This is only returned in the read api, not in the transaction execution api.",
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "format": "uint64",
             "minimum": 0.0
           },
@@ -6548,10 +6109,7 @@
             ]
           },
           "timestamp_ms": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "format": "uint64",
             "minimum": 0.0
           }
@@ -6559,9 +6117,7 @@
       },
       "Supply": {
         "type": "object",
-        "required": [
-          "value"
-        ],
+        "required": ["value"],
         "properties": {
           "value": {
             "type": "integer",
@@ -6573,10 +6129,7 @@
       "SystemParameters": {
         "description": "Rust version of the Move sui::sui_system::SystemParameters type",
         "type": "object",
-        "required": [
-          "max_validator_candidate_count",
-          "min_validator_stake"
-        ],
+        "required": ["max_validator_candidate_count", "min_validator_stake"],
         "properties": {
           "max_validator_candidate_count": {
             "type": "integer",
@@ -6593,10 +6146,7 @@
       "Table": {
         "description": "Rust version of the Move sui::table::Table type. Putting it here since we only use it in sui_system in the framework.",
         "type": "object",
-        "required": [
-          "id",
-          "size"
-        ],
+        "required": ["id", "size"],
         "properties": {
           "id": {
             "$ref": "#/components/schemas/ObjectID"
@@ -6611,9 +6161,7 @@
       "TableVec": {
         "description": "Rust version of the Move sui::table::Table type. Putting it here since we only use it in sui_system in the framework.",
         "type": "object",
-        "required": [
-          "contents"
-        ],
+        "required": ["contents"],
         "properties": {
           "contents": {
             "$ref": "#/components/schemas/Table"
@@ -6622,11 +6170,7 @@
       },
       "TransactionBytes": {
         "type": "object",
-        "required": [
-          "gas",
-          "inputObjects",
-          "txBytes"
-        ],
+        "required": ["gas", "inputObjects", "txBytes"],
         "properties": {
           "gas": {
             "description": "the gas object to be used",
@@ -6655,11 +6199,7 @@
       },
       "TransactionData": {
         "type": "object",
-        "required": [
-          "gasData",
-          "sender",
-          "transactions"
-        ],
+        "required": ["gasData", "sender", "transactions"],
         "properties": {
           "gasData": {
             "$ref": "#/components/schemas/GasData"
@@ -6686,13 +6226,7 @@
       "TransactionEffects": {
         "description": "The response from processing a transaction or a certified transaction",
         "type": "object",
-        "required": [
-          "executedEpoch",
-          "gasObject",
-          "gasUsed",
-          "status",
-          "transactionDigest"
-        ],
+        "required": ["gasObject", "gasUsed", "status", "transactionDigest"],
         "properties": {
           "created": {
             "type": "array",
@@ -6779,9 +6313,7 @@
           {
             "description": "Initiate an object transfer between addresses",
             "type": "object",
-            "required": [
-              "TransferObject"
-            ],
+            "required": ["TransferObject"],
             "properties": {
               "TransferObject": {
                 "$ref": "#/components/schemas/TransferObject"
@@ -6792,9 +6324,7 @@
           {
             "description": "Pay one or more recipients from a set of input coins",
             "type": "object",
-            "required": [
-              "Pay"
-            ],
+            "required": ["Pay"],
             "properties": {
               "Pay": {
                 "$ref": "#/components/schemas/Pay"
@@ -6805,9 +6335,7 @@
           {
             "description": "Pay one or more recipients from a set of Sui coins, the input coins are also used to for gas payments.",
             "type": "object",
-            "required": [
-              "PaySui"
-            ],
+            "required": ["PaySui"],
             "properties": {
               "PaySui": {
                 "$ref": "#/components/schemas/PaySui"
@@ -6818,9 +6346,7 @@
           {
             "description": "Pay one or more recipients from a set of Sui coins, the input coins are also used to for gas payments.",
             "type": "object",
-            "required": [
-              "PayAllSui"
-            ],
+            "required": ["PayAllSui"],
             "properties": {
               "PayAllSui": {
                 "$ref": "#/components/schemas/PayAllSui"
@@ -6831,9 +6357,7 @@
           {
             "description": "Publish a new Move module",
             "type": "object",
-            "required": [
-              "Publish"
-            ],
+            "required": ["Publish"],
             "properties": {
               "Publish": {
                 "$ref": "#/components/schemas/MovePackage"
@@ -6844,9 +6368,7 @@
           {
             "description": "Call a function in a published Move module",
             "type": "object",
-            "required": [
-              "Call"
-            ],
+            "required": ["Call"],
             "properties": {
               "Call": {
                 "$ref": "#/components/schemas/MoveCall"
@@ -6857,9 +6379,7 @@
           {
             "description": "Initiate a SUI coin transfer between addresses",
             "type": "object",
-            "required": [
-              "TransferSui"
-            ],
+            "required": ["TransferSui"],
             "properties": {
               "TransferSui": {
                 "$ref": "#/components/schemas/TransferSui"
@@ -6870,9 +6390,7 @@
           {
             "description": "A system transaction that will update epoch information on-chain.",
             "type": "object",
-            "required": [
-              "ChangeEpoch"
-            ],
+            "required": ["ChangeEpoch"],
             "properties": {
               "ChangeEpoch": {
                 "$ref": "#/components/schemas/SuiChangeEpoch"
@@ -6883,9 +6401,7 @@
           {
             "description": "A system transaction used for initializing the initial state of the chain.",
             "type": "object",
-            "required": [
-              "Genesis"
-            ],
+            "required": ["Genesis"],
             "properties": {
               "Genesis": {
                 "$ref": "#/components/schemas/SuiGenesisTransaction"
@@ -6896,9 +6412,7 @@
           {
             "description": "A system transaction marking the start of a series of transactions scheduled as part of a checkpoint",
             "type": "object",
-            "required": [
-              "ConsensusCommitPrologue"
-            ],
+            "required": ["ConsensusCommitPrologue"],
             "properties": {
               "ConsensusCommitPrologue": {
                 "$ref": "#/components/schemas/SuiConsensusCommitPrologue"
@@ -6913,34 +6427,22 @@
           {
             "description": "All transaction hashes.",
             "type": "string",
-            "enum": [
-              "All"
-            ]
+            "enum": ["All"]
           },
           {
             "description": "Query by move function.",
             "type": "object",
-            "required": [
-              "MoveFunction"
-            ],
+            "required": ["MoveFunction"],
             "properties": {
               "MoveFunction": {
                 "type": "object",
-                "required": [
-                  "package"
-                ],
+                "required": ["package"],
                 "properties": {
                   "function": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "module": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
+                    "type": ["string", "null"]
                   },
                   "package": {
                     "$ref": "#/components/schemas/ObjectID"
@@ -6953,9 +6455,7 @@
           {
             "description": "Query by input object.",
             "type": "object",
-            "required": [
-              "InputObject"
-            ],
+            "required": ["InputObject"],
             "properties": {
               "InputObject": {
                 "$ref": "#/components/schemas/ObjectID"
@@ -6966,9 +6466,7 @@
           {
             "description": "Query by mutated object.",
             "type": "object",
-            "required": [
-              "MutatedObject"
-            ],
+            "required": ["MutatedObject"],
             "properties": {
               "MutatedObject": {
                 "$ref": "#/components/schemas/ObjectID"
@@ -6979,9 +6477,7 @@
           {
             "description": "Query by sender address.",
             "type": "object",
-            "required": [
-              "FromAddress"
-            ],
+            "required": ["FromAddress"],
             "properties": {
               "FromAddress": {
                 "$ref": "#/components/schemas/SuiAddress"
@@ -6992,9 +6488,7 @@
           {
             "description": "Query by recipient address.",
             "type": "object",
-            "required": [
-              "ToAddress"
-            ],
+            "required": ["ToAddress"],
             "properties": {
               "ToAddress": {
                 "$ref": "#/components/schemas/SuiAddress"
@@ -7006,10 +6500,7 @@
       },
       "TransferObject": {
         "type": "object",
-        "required": [
-          "objectRef",
-          "recipient"
-        ],
+        "required": ["objectRef", "recipient"],
         "properties": {
           "objectRef": {
             "$ref": "#/components/schemas/ObjectRef"
@@ -7021,10 +6512,7 @@
       },
       "TransferObjectParams": {
         "type": "object",
-        "required": [
-          "objectId",
-          "recipient"
-        ],
+        "required": ["objectId", "recipient"],
         "properties": {
           "objectId": {
             "$ref": "#/components/schemas/ObjectID"
@@ -7036,15 +6524,10 @@
       },
       "TransferSui": {
         "type": "object",
-        "required": [
-          "recipient"
-        ],
+        "required": ["recipient"],
         "properties": {
           "amount": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "format": "uint64",
             "minimum": 0.0
           },
@@ -7059,9 +6542,7 @@
       "UID": {
         "description": "Rust version of the Move sui::object::Info type",
         "type": "object",
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "properties": {
           "id": {
             "$ref": "#/components/schemas/ObjectID"
@@ -7237,10 +6718,7 @@
       "ValidatorPair": {
         "description": "Rust version of the Move sui::validator_set::ValidatorPair type",
         "type": "object",
-        "required": [
-          "from",
-          "to"
-        ],
+        "required": ["from", "to"],
         "properties": {
           "from": {
             "$ref": "#/components/schemas/SuiAddress"
@@ -7307,9 +6785,7 @@
       "VecMap_for_SuiAddress_and_VecSet_for_SuiAddress": {
         "description": "Rust version of the Move sui::vec_map::VecMap type",
         "type": "object",
-        "required": [
-          "contents"
-        ],
+        "required": ["contents"],
         "properties": {
           "contents": {
             "type": "array",
@@ -7322,9 +6798,7 @@
       "VecMap_for_ValidatorPair_and_TableVec": {
         "description": "Rust version of the Move sui::vec_map::VecMap type",
         "type": "object",
-        "required": [
-          "contents"
-        ],
+        "required": ["contents"],
         "properties": {
           "contents": {
             "type": "array",
@@ -7337,9 +6811,7 @@
       "VecSet_for_SuiAddress": {
         "description": "Rust version of the Move sui::vec_set::VecSet type",
         "type": "object",
-        "required": [
-          "contents"
-        ],
+        "required": ["contents"],
         "properties": {
           "contents": {
             "type": "array",
