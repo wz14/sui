@@ -10,7 +10,7 @@ import {
 } from 'react-router-dom';
 
 import AddressResult from './address-result/AddressResult';
-import Epochs from './epochs/EpochsTesting';
+import Epochs from './epochs/Epochs';
 import Home from './home/Home';
 import { ObjectResult } from './object-result/ObjectResult';
 import SearchResult from './search-result/SearchResult';
