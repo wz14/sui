@@ -20,6 +20,7 @@
         "preview-storybook": "pnpm dlx serve ./storybook-static"
     },
     "dependencies": {
+        "@faker-js/faker": "^7.6.0",
         "@floating-ui/react": "^0.18.0",
         "@fontsource/inter": "^4.5.14",
         "@fontsource/red-hat-mono": "^4.5.11",

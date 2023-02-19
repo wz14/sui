@@ -26,7 +26,6 @@ export default function Epochs() {
     const { data: epochData, isLoading } = useQuery(['epochs'], async () => {
         // get epoch info
 
-        // todo: should we move this to JSON RPC?
         const { data, isSuccess } = await rpc.getEvents(
             { MoveEvent: SYSTEM_EPOCH_INFO },
             null,
@@ -66,8 +65,6 @@ export default function Epochs() {
             }),
         [epochData]
     );
-
-    console.log(tableData);
 
     return (
         <section>
