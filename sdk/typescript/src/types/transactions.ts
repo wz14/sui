@@ -24,6 +24,7 @@ import {
   SuiJsonValue,
   TransactionDigest,
 } from './common';
+import { CheckpointDigest } from './checkpoints';
 
 // TODO: support u64
 export const EpochId = number();
@@ -350,6 +351,7 @@ export type TransactionQuery =
   | { InputObject: ObjectId }
   | { MutatedObject: ObjectId }
   | { FromAddress: SuiAddress }
+  | { Checkpoint: CheckpointDigest }
   | { ToAddress: SuiAddress };
 
 export type EmptySignInfo = object;

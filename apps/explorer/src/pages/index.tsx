@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 
 import AddressResult from './address-result/AddressResult';
+import { CheckpointDetail } from './checkpoints/CheckpointDetail';
 import { EpochDetail } from './epochs/EpochDetail';
 import Epochs from './epochs/Epochs';
 import Home from './home/Home';
@@ -39,6 +40,7 @@ export const router = sentryCreateBrowserRouter([
             { path: '/', element: <Home /> },
             { path: 'epochs', element: <Epochs /> },
             { path: 'epoch/:number', element: <EpochDetail /> },
+            { path: 'checkpoint/:id', element: <CheckpointDetail /> },
             { path: 'transactions', element: <Transactions /> },
             { path: 'object/:id', element: <ObjectResult /> },
             { path: 'transaction/:id', element: <TransactionResult /> },

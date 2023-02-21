@@ -6,6 +6,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::base_types::{SuiAddress, TransactionDigest};
+use crate::digests::CheckpointDigest;
 use crate::event::EventType;
 use crate::object::Owner;
 use crate::ObjectID;
@@ -28,6 +29,8 @@ pub enum TransactionQuery {
     FromAddress(SuiAddress),
     /// Query by recipient address.
     ToAddress(SuiAddress),
+    /// Query by checkpoint digest.
+    Checkpoint(CheckpointDigest)
 }
 
 #[derive(Clone, Debug, JsonSchema, Serialize, Deserialize)]
