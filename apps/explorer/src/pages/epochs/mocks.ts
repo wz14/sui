@@ -27,7 +27,7 @@ export const getEpochs = async () => {};
 
 // getCheckpoints()
 export const getCheckpoints = async () =>
-    Array(200).fill(null).map(getCheckpoint);
+    Array(200).fill({ length: 200 }).map(getCheckpoint);
 
 // getCheckpoint()
 export const getCheckpoint = async () => ({

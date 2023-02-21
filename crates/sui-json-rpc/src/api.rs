@@ -233,7 +233,7 @@ pub trait RpcFullNodeReadApi {
         module_name: String,
         struct_name: String,
     ) -> RpcResult<SuiMoveNormalizedStruct>;
-
+ 
     /// Return a structured representation of Move function
     #[method(name = "getNormalizedMoveFunction")]
     async fn get_normalized_move_function(

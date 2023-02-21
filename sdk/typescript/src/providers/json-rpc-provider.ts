@@ -1045,7 +1045,6 @@ export class JsonRpcProvider extends Provider {
     }
   }
 
-  // todo: remove this when `getCheckpoint` is supported
   async getCheckpoint(id: number | string): Promise<any> {
     const resp = await this.client.requestWithType(
       'sui_getCheckpoint',
