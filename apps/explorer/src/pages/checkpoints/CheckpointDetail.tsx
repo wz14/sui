@@ -1,19 +1,23 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { useFeature } from '@growthbook/growthbook-react';
 import { type TransactionKindName } from '@mysten/sui.js';
 import { useQuery } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 
 import { genTableDataFromTxData } from '~/components/transaction-card/TxCardUtils';
 import { useRpc } from '~/hooks/useRpc';
+import { LoadingSpinner } from '~/ui/LoadingSpinner';
 import { PageHeader } from '~/ui/PageHeader';
 import { TableCard } from '~/ui/TableCard';
 import { Tab, TabGroup, TabList, TabPanels } from '~/ui/Tabs';
 import { Text } from '~/ui/Text';
+import { GROWTHBOOK_FEATURES } from '~/utils/growthbook';
 import { convertNumberToDate } from '~/utils/timeUtils';
 
-export function CheckpointDetail() {
+function CheckpointDetail() {
+    const enabled = useFeature(GROWTHBOOK_FEATURES.EPOCHS_CHECKPOINTS).on;
     const { id } = useParams<{ id: string }>();
     const rpc = useRpc();
 
@@ -63,6 +67,8 @@ export function CheckpointDetail() {
     }));
 
     const txTableData = genTableDataFromTxData(txDataForTable!, 10);
+
+    if (!enabled) return <Navigate to="/" />;
 
     return (
         <div className="flex flex-col space-y-12">
@@ -156,3 +162,9 @@ export function CheckpointDetail() {
         </div>
     );
 }
+
+export default () => (
+    <FeaturesReady timeout={500} fallback={<LoadingSpinner />}>
+        <CheckpointDetail />
+    </FeaturesReady>
+);

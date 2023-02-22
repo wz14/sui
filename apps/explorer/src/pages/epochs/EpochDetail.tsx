@@ -1,17 +1,19 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { useFeature, FeaturesReady } from '@growthbook/growthbook-react';
 import { useQuery } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 
 import { getCheckpoints, getCurrentEpoch } from './mocks';
 
 import { Card } from '~/ui/Card';
 import { EpochProgress } from '~/ui/EpochProgress';
-import { TableCard } from '~/ui/TableCard';
+import { LoadingSpinner } from '~/ui/LoadingSpinner';
+import { GROWTHBOOK_FEATURES } from '~/utils/growthbook';
 
-// SPDX-License-Identifier: Apache-2.0
-export function EpochDetail() {
+function EpochDetail() {
+    const enabled = useFeature(GROWTHBOOK_FEATURES.EPOCHS_CHECKPOINTS).on;
     const { number } = useParams<{ number: string }>();
     const { data, isLoading } = useQuery(
         ['epoch', number],
@@ -46,6 +48,8 @@ export function EpochDetail() {
 
     // console.log(checkpointsTable);
 
+    if (!enabled) return <Navigate to="/" />;
+
     return (
         <div className="flex flex-col">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -71,3 +75,9 @@ export function EpochDetail() {
         </div>
     );
 }
+
+export default () => (
+    <FeaturesReady timeout={500} fallback={<LoadingSpinner />}>
+        <EpochDetail />
+    </FeaturesReady>
+);
