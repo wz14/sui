@@ -17,7 +17,6 @@ import { GROWTHBOOK_FEATURES } from '~/utils/growthbook';
 
 function Epochs() {
     const enabled = useFeature(GROWTHBOOK_FEATURES.EPOCHS_CHECKPOINTS).on;
-    console.log(enabled);
     // todo: replace this with real endpoint when available
     const { data: epochData } = useQuery(
         ['epochs'],

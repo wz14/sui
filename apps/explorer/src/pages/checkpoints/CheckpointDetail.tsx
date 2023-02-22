@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { useFeature } from '@growthbook/growthbook-react';
+import { useFeature, FeaturesReady } from '@growthbook/growthbook-react';
 import { type TransactionKindName } from '@mysten/sui.js';
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, useParams } from 'react-router-dom';
@@ -73,7 +73,6 @@ function CheckpointDetail() {
     return (
         <div className="flex flex-col space-y-12">
             <PageHeader title={checkpoint.digest} type="Checkpoint" />
-
             <div className="space-y-10">
                 <TabGroup as="div" size="lg">
                     <TabList>

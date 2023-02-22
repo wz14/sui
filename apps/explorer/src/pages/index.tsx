@@ -13,6 +13,7 @@ import AddressResult from './address-result/AddressResult';
 import CheckpointDetail from './checkpoints/CheckpointDetail';
 import EpochDetail from './epochs/EpochDetail';
 import Epochs from './epochs/Epochs';
+import EpochsTesting from './epochs/EpochsTesting';
 import Home from './home/Home';
 import { ObjectResult } from './object-result/ObjectResult';
 import SearchResult from './search-result/SearchResult';
@@ -40,6 +41,7 @@ export const router = sentryCreateBrowserRouter([
             { path: '/', element: <Home /> },
             { path: 'epochs', element: <Epochs /> },
             { path: 'epoch/:number', element: <EpochDetail /> },
+            { path: 'epoch/testing', element: <EpochsTesting /> },
             { path: 'checkpoint/:id', element: <CheckpointDetail /> },
             { path: 'transactions', element: <Transactions /> },
             { path: 'object/:id', element: <ObjectResult /> },

@@ -20,7 +20,7 @@ function EpochDetail() {
         async () => await getCurrentEpoch()
     );
 
-    const { data: checkpoints, isLoading: checkpointsLoading } = useQuery(
+    const { data: checkpoints } = useQuery(
         ['checkpoints', number],
         async () => await getCheckpoints()
     );
@@ -45,8 +45,6 @@ function EpochDetail() {
             { header: 'Previous Digest', accessor: 'previousDigest' },
         ],
     }));
-
-    // console.log(checkpointsTable);
 
     if (!enabled) return <Navigate to="/" />;
 

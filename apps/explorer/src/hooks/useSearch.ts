@@ -24,19 +24,41 @@ const getResultsForTransaction = async (
     rpc: JsonRpcProvider,
     query: string
 ) => {
+    // todo: confirm- checkpoint digest is also a valid transaction digest
     if (!isValidTransactionDigest(query)) return null;
+    try {
+        const txdata = await rpc.getTransactionWithEffects(query);
+        return {
+            label: 'transaction',
+            results: [
+                {
+                    id: txdata.certificate.transactionDigest,
+                    label: txdata.certificate.transactionDigest,
+                    type: 'transaction',
+                },
+            ],
+        };
+    } catch (e) {
+        return null;
+    }
+};
 
-    const txdata = await rpc.getTransactionWithEffects(query);
-    return {
-        label: 'transaction',
-        results: [
-            {
-                id: txdata.certificate.transactionDigest,
-                label: txdata.certificate.transactionDigest,
-                type: 'transaction',
-            },
-        ],
-    };
+const getResultsForCheckpoint = async (rpc: JsonRpcProvider, query: string) => {
+    const { digest } = await rpc.getCheckpoint(query);
+    console.log(digest);
+    if (digest) {
+        return {
+            label: 'checkpoint',
+            results: [
+                {
+                    id: digest,
+                    label: digest,
+                    type: 'checkpoint',
+                },
+            ],
+        };
+    }
+    return null;
 };
 
 const getResultsForObject = async (rpc: JsonRpcProvider, query: string) => {
@@ -90,6 +112,7 @@ export function useSearch(query: string) {
         ['search', query],
         async () => {
             const results = await Promise.all([
+                getResultsForCheckpoint(rpc, query),
                 getResultsForTransaction(rpc, query),
                 getResultsForAddress(rpc, query),
                 getResultsForObject(rpc, query),
