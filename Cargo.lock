@@ -9370,6 +9370,7 @@ dependencies = [
  "anyhow",
  "arc-swap",
  "axum",
+ "cfg-if",
  "chrono",
  "clap 3.2.23",
  "const-str",
