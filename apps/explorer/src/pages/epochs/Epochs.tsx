@@ -18,8 +18,7 @@ import { GROWTHBOOK_FEATURES } from '~/utils/growthbook';
 
 function Epochs() {
     const enabled = useFeature(GROWTHBOOK_FEATURES.EPOCHS_CHECKPOINTS).on;
-    // todo: replace this call with an rpc call to `sui_getEpochs`
-    // when it is implemented
+    // todo: remove mock data and replace with rpc call
     const { data: epochs } = useQuery(
         ['epochs'],
         async () => await getEpochs()
@@ -114,11 +113,11 @@ function Epochs() {
     );
 }
 
-export default () => {
+export default function EpochsFeatureFlagged() {
     const gb = useGrowthBook();
     if (gb?.ready) {
         return <Epochs />;
     } else {
         return <LoadingSpinner />;
     }
-};
+}

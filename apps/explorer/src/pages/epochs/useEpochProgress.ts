@@ -11,12 +11,10 @@ export function useEpochProgress(
     suffix: string = 'left'
 ) {
     const [number, label] = useTimeAgo(end).split(' ');
-
     const progress = useMemo(
         () => (start && end ? ((Date.now() - start) / (end - start)) * 100 : 0),
         [start, end]
     );
-
     return {
         progress,
         label: `${number} ${label} ${suffix}`,

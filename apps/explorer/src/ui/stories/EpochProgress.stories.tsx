@@ -6,7 +6,7 @@ import { type Meta, type StoryObj } from '@storybook/react';
 import {
     EpochProgress,
     type EpochProgressProps,
-} from '../../pages/epochs/stats/Progress';
+} from '../../pages/epochs/stats/EpochProgress';
 
 export default {
     component: EpochProgress,

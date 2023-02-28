@@ -4,51 +4,88 @@
 import { useFeature, useGrowthBook } from '@growthbook/growthbook-react';
 import { Navigate } from 'react-router-dom';
 
+import { validatorsTableData } from '../validators/Validators';
 import { getMockEpochData } from './mocks';
 import { EpochStats } from './stats/EpochStats';
 import { useCheckpointsTable } from './useCheckpointsTable';
 
 import { StatsWrapper } from '~/components/HomeMetrics';
 import { SuiAmount } from '~/components/transaction-card/TxCardUtils';
-import { EpochProgress } from '~/pages/epochs/stats/Progress';
+import { useGetSystemObject } from '~/hooks/useGetObject';
+import { useGetValidatorsEvents } from '~/hooks/useGetValidatorsEvents';
+import { EpochProgress } from '~/pages/epochs/stats/EpochProgress';
+import { Banner } from '~/ui/Banner';
+import { Card } from '~/ui/Card';
+import { DonutChart } from '~/ui/DonutChart';
 import { LoadingSpinner } from '~/ui/LoadingSpinner';
+import { Stats } from '~/ui/Stats';
 import { TableCard } from '~/ui/TableCard';
-import { Tab, TabGroup, TabList, TabPanels } from '~/ui/Tabs';
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '~/ui/Tabs';
 import { GROWTHBOOK_FEATURES } from '~/utils/growthbook';
 
 function EpochDetail() {
     const enabled = useFeature(GROWTHBOOK_FEATURES.EPOCHS_CHECKPOINTS).on;
-    const { data: epochData, isLoading } = useGetCurrentEpochStaticInfo();
-    const { data: checkpointsTable } = useCheckpointsTable(epochData?.epoch);
-
-    if (isLoading) return <LoadingSpinner />;
-    if (!enabled) return <Navigate to="/" />;
-    if (!epochData) return null;
-
-    // todo: remove this when we have estimated end time in api
     const {
+        startTimestamp,
+        endTimestamp,
         storageSize,
         gasCostSummary,
-        endTimestamp,
         totalRewards,
         storageFundEarnings,
+        stakeSubsidies,
     } = getMockEpochData();
+
+    const epochQuery = useGetSystemObject();
+    const checkpointsTable = useCheckpointsTable(epochQuery.data?.epoch);
+
+    const { active, pending, atRisk } = {
+        active: epochQuery.data?.validators.active_validators.length,
+        pending: epochQuery.data?.validators.pending_validators.contents.size,
+        atRisk: epochQuery.data?.validators.pending_removals.length,
+    };
+
+    const { data: validatorEvents, isLoading: validatorsEventsLoading } =
+        useGetValidatorsEvents({
+            limit: epochQuery.data?.validators.active_validators.length || 0,
+            order: 'descending',
+        });
+
+    if (!enabled) return <Navigate to="/" />;
+    if (epochQuery.isError)
+        return (
+            <Banner variant="error" fullWidth>
+                There was an issue retrieving data for the current epoch
+            </Banner>
+        );
+
+    if (epochQuery.isLoading || validatorsEventsLoading)
+        return <LoadingSpinner />;
+    if (!epochQuery.data || !validatorEvents) return null;
+
+    const validatorsTable = validatorsTableData(
+        epochQuery?.data.validators.active_validators,
+        epochQuery?.data.epoch,
+        validatorEvents?.data,
+        epochQuery?.data.parameters.min_validator_stake
+    );
 
     return (
         <div className="flex flex-col space-y-16">
-            <div className="grid grid-cols-1 gap-4 sm:gap-4 md:flex md:gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-2 md:flex md:gap-6">
                 <EpochProgress
-                    epoch={epochData.epoch}
-                    start={epochData.epoch_start_timestamp_ms!}
+                    epoch={epochQuery.data.epoch}
+                    inProgress
+                    start={startTimestamp!}
                     end={endTimestamp}
                 />
                 <EpochStats label="Activity">
-                    <StatsWrapper label="Storage Size" tooltip="Storage Size">
+                    <Stats label="Storage Size" tooltip="Storage Size">
                         {`${storageSize.toFixed(2)} GB`}
-                    </StatsWrapper>
-                    <StatsWrapper label="Gas Revenue" tooltip="Gas Revenue">
+                    </Stats>
+
+                    <Stats label="Gas Revenue" tooltip="Gas Revenue">
                         <SuiAmount amount={gasCostSummary?.gasRevenue} />
-                    </StatsWrapper>
+                    </Stats>
                     <StatsWrapper
                         label="Storage Revenue"
                         tooltip="Storage Revenue"
@@ -64,9 +101,7 @@ function EpochDetail() {
                         label="Stake Subsidies"
                         tooltip="Stake Subsidies"
                     >
-                        <SuiAmount
-                            amount={epochData.stake_subsidy.balance.value}
-                        />
+                        <SuiAmount amount={stakeSubsidies} />
                     </StatsWrapper>
                     <StatsWrapper label="Total Rewards" tooltip="Total Rewards">
                         <SuiAmount amount={totalRewards} />
@@ -79,30 +114,65 @@ function EpochDetail() {
                         <SuiAmount amount={storageFundEarnings} />
                     </StatsWrapper>
                 </EpochStats>
+                <Card spacing="lg">
+                    <DonutChart
+                        title="Validators in Next Epoch"
+                        suffix="validators"
+                        data={[
+                            {
+                                value: active ?? 0,
+                                label: 'Active',
+                                color: '#589AEA',
+                            },
+                            {
+                                value: pending ?? 0,
+                                label: 'New',
+                                color: '#6FBCF0',
+                            },
+                            {
+                                value: atRisk ?? 0,
+                                label: 'At Risk',
+                                color: '#FF794B',
+                            },
+                        ]}
+                    />
+                </Card>
             </div>
-            <div>
-                <TabGroup size="lg">
-                    <TabList>
-                        <Tab>Checkpoints</Tab>
-                    </TabList>
-                    <TabPanels className="mt-4">
+
+            <TabGroup size="lg">
+                <TabList>
+                    <Tab>Checkpoints</Tab>
+                    <Tab>Participating Validators</Tab>
+                </TabList>
+                <TabPanels className="mt-4">
+                    <TabPanel>
                         {checkpointsTable ? (
                             <TableCard
                                 data={checkpointsTable?.data}
                                 columns={checkpointsTable?.columns}
                             />
                         ) : null}
-                    </TabPanels>
-                </TabGroup>
-            </div>
+                    </TabPanel>
+                    <TabPanel>
+                        {validatorsTable ? (
+                            <TableCard
+                                data={validatorsTable?.data!}
+                                sortTable
+                                defaultSorting={[{ id: 'stake', desc: false }]}
+                                columns={validatorsTable?.columns!}
+                            />
+                        ) : null}
+                    </TabPanel>
+                </TabPanels>
+            </TabGroup>
         </div>
     );
 }
 
-export default () => {
+export default function EpochDetailFeatureFlagged() {
     const gb = useGrowthBook();
     if (gb?.ready) {
         return <EpochDetail />;
     }
     return <LoadingSpinner />;
-};
+}

@@ -2,16 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 export type Epoch = {
-    // epoch: number;
+    epoch: number;
     // validators: any;
     // transactionCount: number;
-    // checkpointSet: [number, number];
-    // startTimestamp: number;
+    checkpointSet: [number, number];
+    startTimestamp: number;
     endTimestamp: number;
     totalRewards: number;
-    // stakeSubsidies: number;
+    stakeSubsidies: number;
     storageFundEarnings: number;
     storageSize: number;
+    transactionCount: number;
     gasCostSummary?: {
         gasRevenue: number;
         totalRevenue: number;
@@ -20,16 +21,20 @@ export type Epoch = {
     };
 };
 
-export const getFutureTime = () => {
-    const now = new Date(); // get the current time
-    const min = now.getTime(); // get the current timestamp in milliseconds
-    const max = now.getTime() + 1 * 24 * 60 * 60 * 1000; // set the maximum timestamp to 7 days from now
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+export const recentTime = (future = false) => {
+    const now = new Date().getTime();
+    const offset = Math.floor(Math.random() * 1000 * 60 * 60 * 24);
+    return now + offset * (future ? 1 : -1);
 };
 
 export const getMockEpochData = (): Epoch => ({
+    epoch: 0,
     storageSize: 1000,
-    endTimestamp: getFutureTime(),
+    startTimestamp: recentTime(),
+    endTimestamp: recentTime(true),
+    stakeSubsidies: 1000000,
+    transactionCount: 1000,
+    checkpointSet: [12345, 15678],
     gasCostSummary: {
         gasRevenue: 1000000,
         storageRevenue: 1000000,
@@ -50,7 +55,7 @@ export const getCheckpoints = async () =>
 // getCheckpoint()
 export const getCheckpoint = async () => ({
     epoch: 0,
-    timestampMs: getFutureTime(),
+    timestampMs: recentTime(),
     sequence_number: 50000,
     network_total_transactions: 10000,
     content_digest: 'J2ERuhiokCicsQVfgs7bZRqkGmZtSoDtL7yNRH6AXtBd',
