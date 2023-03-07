@@ -34,7 +34,7 @@ use sui_framework_build::compiled_package::BuildConfig;
 use sui_json::SuiJsonValue;
 use sui_json_rpc_types::{
     DynamicFieldPage, SuiObjectData, SuiObjectInfo, SuiObjectResponse, SuiRawData,
-    SuiTransactionResponse,
+    SuiTransactionEffectsAPI, SuiTransactionResponse,
 };
 use sui_json_rpc_types::{SuiExecutionStatus, SuiObjectDataOptions};
 use sui_keys::keystore::AccountKeystore;
@@ -534,13 +534,13 @@ impl SuiClientCommands {
                 if !bcs {
                     let object_read = client
                         .read_api()
-                        .get_object_with_options(id, Some(SuiObjectDataOptions::full_content()))
+                        .get_object_with_options(id, SuiObjectDataOptions::full_content())
                         .await?;
                     SuiClientCommandResult::Object(object_read)
                 } else {
                     let raw_object_read = client
                         .read_api()
-                        .get_object_with_options(id, Some(SuiObjectDataOptions::bcs_lossless()))
+                        .get_object_with_options(id, SuiObjectDataOptions::bcs_lossless())
                         .await?;
                     SuiClientCommandResult::RawObject(raw_object_read)
                 }
@@ -598,8 +598,11 @@ impl SuiClientCommands {
                     .await?;
                 let effects = &response.effects;
                 let time_total = time_start.elapsed().as_micros();
-                if matches!(effects.status, SuiExecutionStatus::Failure { .. }) {
-                    return Err(anyhow!("Error transferring object: {:#?}", effects.status));
+                if matches!(effects.status(), SuiExecutionStatus::Failure { .. }) {
+                    return Err(anyhow!(
+                        "Error transferring object: {:#?}",
+                        effects.status()
+                    ));
                 }
                 SuiClientCommandResult::Transfer(time_total, response)
             }
@@ -629,8 +632,8 @@ impl SuiClientCommands {
                     )
                     .await?;
                 let effects = &response.effects;
-                if matches!(effects.status, SuiExecutionStatus::Failure { .. }) {
-                    return Err(anyhow!("Error transferring SUI: {:#?}", effects.status));
+                if matches!(effects.status(), SuiExecutionStatus::Failure { .. }) {
+                    return Err(anyhow!("Error transferring SUI: {:#?}", effects.status()));
                 }
                 SuiClientCommandResult::TransferSui(response)
             }
@@ -676,10 +679,10 @@ impl SuiClientCommands {
                     )
                     .await?;
                 let effects = &response.effects;
-                if matches!(effects.status, SuiExecutionStatus::Failure { .. }) {
+                if matches!(effects.status(), SuiExecutionStatus::Failure { .. }) {
                     return Err(anyhow!(
                         "Error executing Pay transaction: {:#?}",
-                        effects.status
+                        effects.status()
                     ));
                 }
                 SuiClientCommandResult::Pay(response)
@@ -725,10 +728,10 @@ impl SuiClientCommands {
                     )
                     .await?;
                 let effects = &response.effects;
-                if matches!(effects.status, SuiExecutionStatus::Failure { .. }) {
+                if matches!(effects.status(), SuiExecutionStatus::Failure { .. }) {
                     return Err(anyhow!(
                         "Error executing PaySui transaction: {:#?}",
-                        effects.status
+                        effects.status()
                     ));
                 }
                 SuiClientCommandResult::PaySui(response)
@@ -762,10 +765,10 @@ impl SuiClientCommands {
                     )
                     .await?;
                 let effects = &response.effects;
-                if matches!(effects.status, SuiExecutionStatus::Failure { .. }) {
+                if matches!(effects.status(), SuiExecutionStatus::Failure { .. }) {
                     return Err(anyhow!(
                         "Error executing PayAllSui transaction: {:#?}",
-                        effects.status
+                        effects.status()
                     ));
                 }
                 SuiClientCommandResult::PayAllSui(response)
@@ -923,7 +926,7 @@ impl SuiClientCommands {
                 .await?;
                 let nft_id = response
                     .effects
-                    .created
+                    .created()
                     .first()
                     .ok_or_else(|| anyhow!("Failed to create NFT"))?
                     .reference
@@ -931,7 +934,7 @@ impl SuiClientCommands {
                 let client = context.get_client().await?;
                 let object_read = client
                     .read_api()
-                    .get_object_with_options(nft_id, Some(SuiObjectDataOptions::full_content()))
+                    .get_object_with_options(nft_id, SuiObjectDataOptions::full_content())
                     .await?;
                 SuiClientCommandResult::CreateExampleNFT(object_read)
             }
@@ -1127,7 +1130,7 @@ impl WalletContext {
         let client = self.get_client().await?;
         Ok(client
             .read_api()
-            .get_object_with_options(object_id, None)
+            .get_object_with_options(object_id, SuiObjectDataOptions::new())
             .await?
             .into_object()?
             .object_ref())
@@ -1150,7 +1153,7 @@ impl WalletContext {
         for oref in object_refs {
             let response = client
                 .read_api()
-                .get_object_with_options(oref.object_id, Some(SuiObjectDataOptions::full_content()))
+                .get_object_with_options(oref.object_id, SuiObjectDataOptions::full_content())
                 .await?;
             match response {
                 SuiObjectResponse::Exists(o) => {
@@ -1171,13 +1174,7 @@ impl WalletContext {
         let client = self.get_client().await?;
         let object = client
             .read_api()
-            .get_object_with_options(
-                *id,
-                Some(SuiObjectDataOptions {
-                    show_owner: Some(true),
-                    ..Default::default()
-                }),
-            )
+            .get_object_with_options(*id, SuiObjectDataOptions::new().with_owner())
             .await?
             .into_object()?;
         Ok(object
@@ -1462,8 +1459,8 @@ pub async fn call_move(
 
     let response = context.execute_transaction(transaction).await?;
     let effects = &response.effects;
-    if matches!(effects.status, SuiExecutionStatus::Failure { .. }) {
-        return Err(anyhow!("Error calling module: {:#?}", effects.status));
+    if matches!(effects.status(), SuiExecutionStatus::Failure { .. }) {
+        return Err(anyhow!("Error calling module: {:#?}", effects.status()));
     }
     Ok(response)
 }

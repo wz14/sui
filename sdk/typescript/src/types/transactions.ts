@@ -14,6 +14,7 @@ import {
   unknown,
   boolean,
   tuple,
+  any,
 } from 'superstruct';
 import { SuiEvent } from './events';
 import { SuiGasData, SuiMovePackage, SuiObjectRef } from './objects';
@@ -120,10 +121,14 @@ export const SuiTransactionKind = union([
   object({ PaySui: PaySui }),
   object({ PayAllSui: PayAllSui }),
   object({ Genesis: Genesis }),
+  // TODO: Refine object type
+  object({ ProgrammableTransaction: any() }),
 ]);
 export type SuiTransactionKind = Infer<typeof SuiTransactionKind>;
 
 export const SuiTransactionData = object({
+  // Eventually this will become union(literal('v1'), literal('v2'), ...)
+  messageVersion: literal('v1'),
   transactions: array(SuiTransactionKind),
   sender: SuiAddress,
   gasData: SuiGasData,
@@ -170,6 +175,9 @@ export const OwnedObjectRef = object({
 export type OwnedObjectRef = Infer<typeof OwnedObjectRef>;
 
 export const TransactionEffects = object({
+  // Eventually this will become union(literal('v1'), literal('v2'), ...)
+  messageVersion: literal('v1'),
+
   /** The status of the execution */
   status: ExecutionStatus,
   /** The epoch when this transaction was executed */

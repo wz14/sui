@@ -19,8 +19,8 @@ use sui_json_rpc_types::{
     RPCTransactionRequestParams, SuiData, SuiEvent, SuiEventEnvelope, SuiExecutionStatus,
     SuiGasCostSummary, SuiObjectData, SuiObjectDataOptions, SuiObjectInfo, SuiObjectRef,
     SuiObjectResponse, SuiParsedData, SuiPastObjectResponse, SuiTransaction, SuiTransactionData,
-    SuiTransactionEffects, SuiTransactionEvents, SuiTransactionResponse, TransactionBytes,
-    TransactionsPage, TransferObjectParams,
+    SuiTransactionEffects, SuiTransactionEffectsAPI, SuiTransactionEffectsV1, SuiTransactionEvents,
+    SuiTransactionResponse, TransactionBytes, TransactionsPage, TransferObjectParams,
 };
 use sui_open_rpc::ExamplePairing;
 use sui_types::base_types::{
@@ -230,6 +230,7 @@ impl RpcExampleProvider {
             digest: ObjectDigest::new(self.rng.gen()),
             type_: Some(GasCoin::type_().to_string()),
             bcs: None,
+            display: None,
         });
 
         Examples::new(
@@ -268,13 +269,18 @@ impl RpcExampleProvider {
             digest: ObjectDigest::new(self.rng.gen()),
             type_: Some(GasCoin::type_().to_string()),
             bcs: None,
+            display: None,
         });
 
         Examples::new(
             "sui_tryGetPastObject",
             vec![ExamplePairing::new(
                 "Get Past Object data",
-                vec![("object_id", json!(object_id)), ("version", json!(4))],
+                vec![
+                    ("object_id", json!(object_id)),
+                    ("version", json!(4)),
+                    ("options", json!(SuiObjectDataOptions::full_content())),
+                ],
                 json!(result),
             )],
         )
@@ -343,7 +349,7 @@ impl RpcExampleProvider {
             "sui_getTransaction",
             vec![ExamplePairing::new(
                 "Return the transaction response object for specified transaction digest",
-                vec![("digest", json!(result.effects.transaction_digest))],
+                vec![("digest", json!(result.effects.transaction_digest()))],
                 json!(result),
             )],
         )
@@ -430,7 +436,7 @@ impl RpcExampleProvider {
             event: sui_event.clone(),
         }];
         let result = SuiTransactionResponse {
-            effects: SuiTransactionEffects {
+            effects: SuiTransactionEffects::V1(SuiTransactionEffectsV1 {
                 status: SuiExecutionStatus::Success,
                 executed_epoch: 0,
                 gas_used: SuiGasCostSummary {
@@ -461,7 +467,7 @@ impl RpcExampleProvider {
                 },
                 events_digest: Some(TransactionEventsDigest::new(self.rng.gen())),
                 dependencies: vec![],
-            },
+            }),
             events: SuiTransactionEvents {
                 data: vec![sui_event],
             },
@@ -492,13 +498,15 @@ impl RpcExampleProvider {
                 vec![
                     (
                         "query",
-                        json!(EventQuery::Transaction(result.effects.transaction_digest)),
+                        json!(EventQuery::Transaction(
+                            *result.effects.transaction_digest()
+                        )),
                     ),
                     (
                         "cursor",
                         json!(EventID {
                             event_seq: 10,
-                            tx_digest: result.effects.transaction_digest
+                            tx_digest: *result.effects.transaction_digest()
                         }),
                     ),
                     ("limit", json!(events.len())),

@@ -3,13 +3,14 @@
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 use std::cell::RefCell;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::{info, warn};
 
 /// The minimum and maximum protocol versions supported by this build.
-pub const MIN_PROTOCOL_VERSION: u64 = 1;
-pub const MAX_PROTOCOL_VERSION: u64 = 1;
+const MIN_PROTOCOL_VERSION: u64 = 1;
+const MAX_PROTOCOL_VERSION: u64 = 1;
 
 #[derive(
     Copy, Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, JsonSchema,
@@ -64,7 +65,7 @@ impl std::ops::Add<u64> for ProtocolVersion {
 /// Models the set of protocol versions supported by a validator.
 /// The `sui-node` binary will always use the SYSTEM_DEFAULT constant, but for testing we need
 /// to be able to inject arbitrary versions into SuiNode.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct SupportedProtocolVersions {
     min: ProtocolVersion,
     max: ProtocolVersion,
@@ -75,6 +76,14 @@ impl SupportedProtocolVersions {
         min: ProtocolVersion::MIN,
         max: ProtocolVersion::MAX,
     };
+
+    /// Use by VersionedProtocolMessage implementors to describe in which range of versions a
+    /// message variant is supported.
+    pub fn new_for_message(min: u64, max: u64) -> Self {
+        let min = ProtocolVersion::new(min);
+        let max = ProtocolVersion::new(max);
+        Self { min, max }
+    }
 
     pub fn new_for_testing(min: u64, max: u64) -> Self {
         let min = ProtocolVersion::new(min);
@@ -104,8 +113,11 @@ impl SupportedProtocolVersions {
 /// This way, if the constant is accessed in a protocol version in which it is not defined, the
 /// validator will crash. (Crashing is necessary because this type of error would almost always
 /// result in forking if not prevented here).
-#[derive(Clone)]
+#[skip_serializing_none]
+#[derive(Clone, Serialize)]
 pub struct ProtocolConfig {
+    pub version: ProtocolVersion,
+
     // ==== Transaction input limits ====
     /// Maximum serialized size of a transaction (in bytes).
     max_tx_size: Option<usize>,
@@ -204,6 +216,9 @@ pub struct ProtocolConfig {
     /// Maximum size of a Move user event. Enforced by the VM during execution.
     max_event_emit_size: Option<u64>,
 
+    /// Maximum length of a vector in Move. Enforced by the VM during execution, and for constants, by the verifier.
+    max_move_vector_len: Option<u64>,
+
     // === Execution gas costs ====
     // note: Option<per-instruction and native function gas costs live in the sui-cost-tables crate
     /// Base cost for any Sui transaction
@@ -271,8 +286,14 @@ pub struct ProtocolConfig {
     /// === Core Protocol ===
 
     /// Max number of transactions per checkpoint.
-    /// Note that this is constant and not a config as validators must have this set to the same value, otherwise they *will* fork
+    /// Note that this is a protocol constant and not a config as validators must have this set to
+    /// the same value, otherwise they *will* fork.
     max_transactions_per_checkpoint: Option<usize>,
+
+    /// Max size of a checkpoint in bytes.
+    /// Note that this is a protocol constant and not a config as validators must have this set to
+    /// the same value, otherwise they *will* fork.
+    max_checkpoint_size: Option<usize>,
 
     /// A protocol upgrade always requires 2f+1 stake to agree. We support a buffer of additional
     /// stake (as a fraction of f, expressed in basis points) that is required before an upgrade
@@ -401,6 +422,9 @@ impl ProtocolConfig {
     pub fn max_event_emit_size(&self) -> u64 {
         self.max_event_emit_size.expect(CONSTANT_ERR_MSG)
     }
+    pub fn max_move_vector_len(&self) -> u64 {
+        self.max_move_vector_len.expect(CONSTANT_ERR_MSG)
+    }
     pub fn base_tx_cost_fixed(&self) -> u64 {
         self.base_tx_cost_fixed.expect(CONSTANT_ERR_MSG)
     }
@@ -450,6 +474,9 @@ impl ProtocolConfig {
     pub fn max_transactions_per_checkpoint(&self) -> usize {
         self.max_transactions_per_checkpoint
             .expect(CONSTANT_ERR_MSG)
+    }
+    pub fn max_checkpoint_size(&self) -> usize {
+        self.max_checkpoint_size.expect(CONSTANT_ERR_MSG)
     }
     pub fn buffer_stake_for_protocol_upgrade_bps(&self) -> u64 {
         self.buffer_stake_for_protocol_upgrade_bps
@@ -521,7 +548,8 @@ impl ProtocolConfig {
         assert!(version.0 >= ProtocolVersion::MIN.0, "{:?}", version);
         assert!(version.0 <= ProtocolVersion::MAX_ALLOWED.0, "{:?}", version);
 
-        let ret = Self::get_for_version_impl(version);
+        let mut ret = Self::get_for_version_impl(version);
+        ret.version = version;
 
         CONFIG_OVERRIDE.with(|ovr| {
             if let Some(override_fn) = &*ovr.borrow() {
@@ -588,6 +616,7 @@ impl ProtocolConfig {
         // To change the values here you must create a new protocol version with the new values!
         match version.0 {
             1 => Self {
+                version, // will be overwitten before being returned
                 max_tx_size: Some(64 * 1024),
                 max_tx_in_batch: Some(10),
                 max_modules_in_publish: Some(128),
@@ -618,7 +647,8 @@ impl ProtocolConfig {
                 max_num_new_move_object_ids: Some(2048),
                 max_num_deleted_move_object_ids: Some(2048),
                 max_num_transfered_move_object_ids: Some(2048),
-                max_event_emit_size: Some(256 * 1024),
+                max_event_emit_size: Some(250 * 1024),
+                max_move_vector_len: Some(256 * 1024),
                 base_tx_cost_fixed: Some(110_000),
                 package_publish_cost_fixed: Some(1_000),
                 base_tx_cost_per_byte: Some(0),
@@ -634,6 +664,7 @@ impl ProtocolConfig {
                 reward_slashing_rate: Some(5000),
                 storage_gas_price: Some(1),
                 max_transactions_per_checkpoint: Some(1000),
+                max_checkpoint_size: Some(30 * 1024 * 1024),
                 // require 2f+1 + 0.75 * f stake for automatic protocol upgrades.
                 // TODO: tune based on experience in testnet
                 buffer_stake_for_protocol_upgrade_bps: Some(7500),
@@ -724,5 +755,28 @@ impl Drop for OverrideGuard {
         CONFIG_OVERRIDE.with(|ovr| {
             *ovr.borrow_mut() = None;
         });
+    }
+}
+
+#[cfg(all(test, not(msim)))]
+mod test {
+    use super::*;
+    use insta::assert_yaml_snapshot;
+
+    #[test]
+    fn snaphost_tests() {
+        println!("\n============================================================================");
+        println!("!                                                                          !");
+        println!("! IMPORTANT: never update snapshots from this test. only add new versions! !");
+        println!("! (it is actually ok to update them up until mainnet launches)             !");
+        println!("!                                                                          !");
+        println!("============================================================================\n");
+        for i in MIN_PROTOCOL_VERSION..=MAX_PROTOCOL_VERSION {
+            let cur = ProtocolVersion::new(i);
+            assert_yaml_snapshot!(
+                format!("version_{}", cur.as_u64()),
+                ProtocolConfig::get_for_version(cur)
+            );
+        }
     }
 }

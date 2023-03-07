@@ -4,7 +4,7 @@
 use futures::future::{join_all, select, Either};
 use futures::FutureExt;
 use narwhal_executor::ExecutionIndices;
-use narwhal_types::CommittedSubDag;
+use narwhal_types::Round;
 use parking_lot::RwLock;
 use parking_lot::{Mutex, RwLockReadGuard};
 use rocksdb::Options;
@@ -25,8 +25,8 @@ use sui_types::error::{SuiError, SuiResult};
 use sui_types::messages::{
     AuthorityCapabilities, CertifiedTransaction, ConsensusTransaction, ConsensusTransactionKey,
     ConsensusTransactionKind, SenderSignedData, SharedInputObject, TransactionData,
-    TransactionEffects, TrustedExecutableTransaction, VerifiedCertificate,
-    VerifiedExecutableTransaction, VerifiedSignedTransaction,
+    TransactionDataAPI, TransactionEffects, TransactionEffectsAPI, TrustedExecutableTransaction,
+    VerifiedCertificate, VerifiedExecutableTransaction, VerifiedSignedTransaction,
 };
 use sui_types::signature::GenericSignature;
 use tracing::{debug, info, trace, warn};
@@ -265,9 +265,6 @@ pub struct AuthorityEpochTables {
     num_certified_checkpoint_signatures:
         DBMap<AuthorityName, (Option<CheckpointSequenceNumber>, u64)>,
 
-    /// Parameters of the system fixed at the epoch start
-    epoch_start_configuration: DBMap<(), EpochStartConfiguration>,
-
     // Maps checkpoint sequence number to an accumulator with accumulated state
     // only for the checkpoint that the key references. Append-only, i.e.,
     // the accumulator is complete wrt the checkpoint
@@ -340,7 +337,7 @@ impl AuthorityPerEpochStore {
         parent_path: &Path,
         db_options: Option<Options>,
         metrics: Arc<EpochMetrics>,
-        epoch_start_configuration: Option<EpochStartConfiguration>,
+        epoch_start_configuration: EpochStartConfiguration,
         store: Arc<AuthorityStore>,
         cache_metrics: Arc<ResolverMetrics>,
     ) -> Arc<Self> {
@@ -366,39 +363,7 @@ impl AuthorityPerEpochStore {
                 }
             })
             .collect();
-        // Insert epoch_start_configuration in the DB. This is used by unit tests
-        //
-        // Production code goes different path:
-        // (1) For the first epoch, this is inserted in the DB along with genesis checkpoint
-        // (2) For other epochs, this is updated when AuthorityPerEpochStore
-        // is initialized during epoch change
-        let epoch_start_configuration =
-            if let Some(epoch_start_configuration) = epoch_start_configuration {
-                assert_eq!(epoch_start_configuration.epoch_id(), epoch_id);
-                debug!(
-                    "Epoch start configuration provided for epoch {}",
-                    epoch_start_configuration.epoch_id()
-                );
-                tables
-                    .epoch_start_configuration
-                    .insert(&(), &epoch_start_configuration)
-                    .expect("Failed to store epoch_start_configuration");
-                epoch_start_configuration
-            } else {
-                assert!(
-                    epoch_id > 0,
-                    "epoch_start_configuration should be provided for epoch 0"
-                );
-                debug!(
-                    "Epoch start configuration not provided for epoch {}",
-                    epoch_id
-                );
-                tables
-                    .epoch_start_configuration
-                    .get(&())
-                    .expect("Failed to load epoch_start_configuration")
-                    .expect("epoch_start_configuration not found for non-0 epoch")
-            };
+        assert_eq!(epoch_start_configuration.epoch_id(), epoch_id);
         let epoch_start_configuration = Arc::new(epoch_start_configuration);
         metrics.current_epoch.set(epoch_id as i64);
         metrics
@@ -456,7 +421,7 @@ impl AuthorityPerEpochStore {
             &self.parent_path,
             self.db_options.clone(),
             self.metrics.clone(),
-            Some(epoch_start_configuration),
+            epoch_start_configuration,
             store,
             self.execution_component.metrics(),
         )
@@ -801,6 +766,7 @@ impl AuthorityPerEpochStore {
             // from the cert.
             let initial_versions: HashMap<_, _> = tx_data
                 .shared_input_objects()
+                .into_iter()
                 .map(SharedInputObject::into_id_and_version)
                 .collect();
 
@@ -900,7 +866,7 @@ impl AuthorityPerEpochStore {
         self.set_assigned_shared_object_versions(
             certificate,
             &effects
-                .shared_objects
+                .shared_objects()
                 .iter()
                 .map(|(id, version, _)| (*id, *version))
                 .collect(),
@@ -1740,10 +1706,10 @@ impl AuthorityPerEpochStore {
 
     pub fn handle_commit_boundary<C: CheckpointServiceNotify>(
         &self,
-        committed_dag: &Arc<CommittedSubDag>,
+        round: Round,
+        timestamp_ms: CheckpointTimestamp,
         checkpoint_service: &Arc<C>,
     ) -> SuiResult {
-        let round = committed_dag.round();
         debug!("Commit boundary at {}", round);
         // This exchange is restart safe because of following:
         //
@@ -1768,7 +1734,7 @@ impl AuthorityPerEpochStore {
             let checkpoint = PendingCheckpoint {
                 roots,
                 details: PendingCheckpointInfo {
-                    timestamp_ms: committed_dag.leader.metadata.created_at,
+                    timestamp_ms,
                     last_of_epoch: final_checkpoint,
                     commit_height: index,
                 },

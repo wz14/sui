@@ -22,7 +22,9 @@ use sui_core::{
         QuorumDriver, QuorumDriverHandler, QuorumDriverHandlerBuilder, QuorumDriverMetrics,
     },
 };
-use sui_json_rpc_types::{SuiObjectDataOptions, SuiObjectResponse, SuiTransactionEffects};
+use sui_json_rpc_types::{
+    SuiObjectDataOptions, SuiObjectResponse, SuiTransactionEffects, SuiTransactionEffectsAPI,
+};
 use sui_network::{DEFAULT_CONNECT_TIMEOUT_SEC, DEFAULT_REQUEST_TIMEOUT_SEC};
 use sui_sdk::{SuiClient, SuiClientBuilder};
 use sui_types::messages::TransactionEvents;
@@ -36,7 +38,7 @@ use sui_types::{
     message_envelope::Envelope,
     messages::{
         CertifiedTransaction, CertifiedTransactionEffects, HandleCertificateResponse,
-        QuorumDriverResponse, Transaction, TransactionStatus,
+        QuorumDriverResponse, Transaction, TransactionEffectsAPI, TransactionStatus,
     },
     object::Object,
 };
@@ -73,12 +75,11 @@ impl ExecutionEffects {
     pub fn mutated(&self) -> Vec<(ObjectRef, Owner)> {
         match self {
             ExecutionEffects::CertifiedTransactionEffects(certified_effects, ..) => {
-                certified_effects.data().mutated.clone()
+                certified_effects.data().mutated().to_vec()
             }
             ExecutionEffects::SuiTransactionEffects(sui_tx_effects) => sui_tx_effects
-                .mutated
-                .clone()
-                .into_iter()
+                .mutated()
+                .iter()
                 .map(|refe| (refe.reference.to_object_ref(), refe.owner))
                 .collect(),
         }
@@ -87,12 +88,11 @@ impl ExecutionEffects {
     pub fn created(&self) -> Vec<(ObjectRef, Owner)> {
         match self {
             ExecutionEffects::CertifiedTransactionEffects(certified_effects, ..) => {
-                certified_effects.data().created.clone()
+                certified_effects.data().created().to_vec()
             }
             ExecutionEffects::SuiTransactionEffects(sui_tx_effects) => sui_tx_effects
-                .created
-                .clone()
-                .into_iter()
+                .created()
+                .iter()
                 .map(|refe| (refe.reference.to_object_ref(), refe.owner))
                 .collect(),
         }
@@ -110,10 +110,10 @@ impl ExecutionEffects {
     pub fn gas_object(&self) -> (ObjectRef, Owner) {
         match self {
             ExecutionEffects::CertifiedTransactionEffects(certified_effects, ..) => {
-                certified_effects.data().gas_object
+                *certified_effects.data().gas_object()
             }
             ExecutionEffects::SuiTransactionEffects(sui_tx_effects) => {
-                let refe = &sui_tx_effects.gas_object;
+                let refe = &sui_tx_effects.gas_object();
                 (refe.reference.to_object_ref(), refe.owner)
             }
         }
@@ -504,7 +504,7 @@ impl FullNodeProxy {
 
         let resp = sui_client.read_api().get_committee_info(None).await?;
         let epoch = resp.epoch;
-        let committee_vec = resp.committee_info;
+        let committee_vec = resp.validators;
         let committee_map =
             BTreeMap::from_iter(committee_vec.into_iter().map(|(name, stake)| (name, stake)));
         let committee = Committee::new(epoch, committee_map)?;
@@ -522,7 +522,7 @@ impl ValidatorProxy for FullNodeProxy {
         match self
             .sui_client
             .read_api()
-            .get_object_with_options(object_id, Some(SuiObjectDataOptions::bcs_lossless()))
+            .get_object_with_options(object_id, SuiObjectDataOptions::bcs_lossless())
             .await?
         {
             SuiObjectResponse::Exists(sui_object) => sui_object.try_into(),

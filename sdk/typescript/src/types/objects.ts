@@ -5,10 +5,10 @@ import {
   any,
   array,
   assign,
+  bigint,
   boolean,
   Infer,
   literal,
-  map,
   number,
   object,
   optional,
@@ -32,7 +32,7 @@ export const SuiObjectRef = object({
   /** Hex code as string representing the object id */
   objectId: string(),
   /** Object version */
-  version: number(),
+  version: union([bigint(), number()]),
 });
 export type SuiObjectRef = Infer<typeof SuiObjectRef>;
 
@@ -94,7 +94,7 @@ export type SuiRawMoveObject = Infer<typeof SuiRawMoveObject>;
 export const SuiRawMovePackage = object({
   id: ObjectId,
   /** A mapping from module name to Move bytecode enocded in base64*/
-  moduleMap: map(string(), string()),
+  moduleMap: record(string(), string()),
 });
 export type SuiRawMovePackage = Infer<typeof SuiRawMovePackage>;
 
@@ -142,6 +142,12 @@ export const SuiObjectData = object({
    * Default to be undefined unless SuiObjectDataOptions.showStorageRebate is set to true
    */
   storageRebate: optional(number()),
+  /**
+   * Display metadata for this object, default to be undefined unless SuiObjectDataOptions.showDisplay is set to true
+   * This can also be None if the struct type does not have Display defined
+   * See more details in https://forums.sui.io/t/nft-object-display-proposal/4872
+   */
+  display: optional(record(string(), string())),
 });
 export type SuiObjectData = Infer<typeof SuiObjectData>;
 
@@ -161,6 +167,8 @@ export const SuiObjectDataOptions = object({
   showPreviousTransaction: optional(boolean()),
   /* Whether to fetch the storage rebate, default to be false */
   showStorageRebate: optional(boolean()),
+  /* Whether to fetch the display metadata, default to be false */
+  showDisplay: optional(boolean()),
 });
 export type SuiObjectDataOptions = Infer<typeof SuiObjectDataOptions>;
 
@@ -233,7 +241,7 @@ export function getObjectId(data: SuiObjectResponse | SuiObjectRef): ObjectId {
 
 export function getObjectVersion(
   data: SuiObjectResponse | SuiObjectRef | SuiObjectData,
-): number | undefined {
+): bigint | number | undefined {
   if ('version' in data) {
     return data.version;
   }
@@ -271,6 +279,12 @@ export function getObjectOwner(
   resp: SuiObjectResponse,
 ): ObjectOwner | undefined {
   return getSuiObjectData(resp)?.owner;
+}
+
+export function getObjectDisplay(
+  resp: SuiObjectResponse,
+): Record<string, string> | undefined {
+  return getSuiObjectData(resp)?.display;
 }
 
 export function getSharedObjectInitialVersion(

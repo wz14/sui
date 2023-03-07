@@ -20,15 +20,13 @@ use serde_with::serde_as;
 
 use sui_protocol_config::ProtocolConfig;
 use sui_types::base_types::{
-    ObjectDigest, ObjectID, ObjectRef, ObjectType, SequenceNumber, TransactionDigest,
+    ObjectDigest, ObjectID, ObjectInfo, ObjectRef, ObjectType, SequenceNumber, TransactionDigest,
 };
 use sui_types::error::{UserInputError, UserInputResult};
 use sui_types::gas_coin::GasCoin;
 use sui_types::messages::MoveModulePublish;
 use sui_types::move_package::{disassemble_modules, MovePackage};
-use sui_types::object::{
-    Data, MoveObject, Object, ObjectFormatOptions, ObjectRead, Owner, PastObjectRead,
-};
+use sui_types::object::{Data, MoveObject, Object, ObjectFormatOptions, ObjectRead, Owner};
 use sui_types::parse_sui_struct_tag;
 
 use crate::{SuiMoveStruct, SuiMoveValue};
@@ -65,9 +63,11 @@ pub struct SuiObjectData {
     /// the present storage gas price.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub storage_rebate: Option<u64>,
-    // TODO: uncomment the following in the next PR
-    // /// The Display metadata for frontend UI rendering
-    // pub display: Option<BTreeMap<String, String>>,
+    /// The Display metadata for frontend UI rendering, default to be None unless SuiObjectDataOptions.showContent is set to true
+    /// This can also be None if the struct type does not have Display defined
+    /// See more details in <https://forums.sui.io/t/nft-object-display-proposal/4872>
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display: Option<BTreeMap<String, String>>,
     /// Move object content or package content, default to be None unless SuiObjectDataOptions.showContent is set to true
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<SuiParsedData>,
@@ -176,91 +176,88 @@ impl TryFrom<&SuiMoveStruct> for GasCoin {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Eq, PartialEq)]
-#[serde(rename_all = "camelCase", rename = "ObjectContentOptions")]
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, Eq, PartialEq, Default)]
+#[serde(rename_all = "camelCase", rename = "ObjectContentOptions", default)]
 pub struct SuiObjectDataOptions {
     /// Whether to show the type of the object. Default to be False
-    pub show_type: Option<bool>,
+    pub show_type: bool,
     /// Whether to show the owner of the object. Default to be False
-    pub show_owner: Option<bool>,
+    pub show_owner: bool,
     /// Whether to show the previous transaction digest of the object. Default to be False
-    pub show_previous_transaction: Option<bool>,
-    // uncomment the following in the next PR
-    // /// Whether to show the Display metadata of the object for frontend rendering. Default to be False
-    // pub show_display: Option<bool>,
+    pub show_previous_transaction: bool,
+    /// Whether to show the Display metadata of the object for frontend rendering. Default to be False
+    pub show_display: bool,
     /// Whether to show the content(i.e., package content or Move struct content) of the object.
     /// Default to be False
-    pub show_content: Option<bool>,
+    pub show_content: bool,
     /// Whether to show the content in BCS format. Default to be False
-    pub show_bcs: Option<bool>,
+    pub show_bcs: bool,
     /// Whether to show the storage rebate of the object. Default to be False
-    pub show_storage_rebate: Option<bool>,
+    pub show_storage_rebate: bool,
 }
 
 impl SuiObjectDataOptions {
-    pub fn bcs_only() -> Self {
-        Self {
-            show_bcs: Some(true),
-            show_type: Some(false),
-            show_owner: Some(false),
-            show_previous_transaction: Some(false),
-            // uncomment the following in the next PR
-            // show_display: Some(false),
-            show_content: Some(false),
-            show_storage_rebate: Some(false),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// return BCS data and all other metadata such as storage rebate
     pub fn bcs_lossless() -> Self {
         Self {
-            show_bcs: Some(true),
-            show_type: Some(true),
-            show_owner: Some(true),
-            show_previous_transaction: Some(true),
-            // uncomment the following in the next PR
-            // show_display: Some(false),
-            show_content: Some(false),
-            show_storage_rebate: Some(true),
+            show_bcs: true,
+            show_type: true,
+            show_owner: true,
+            show_previous_transaction: true,
+            show_display: false,
+            show_content: false,
+            show_storage_rebate: true,
         }
     }
 
     /// return full content except bcs
     pub fn full_content() -> Self {
         Self {
-            show_bcs: Some(false),
-            // Skip because this is inside the SuiRawData
-            show_type: Some(true),
-            show_owner: Some(true),
-            show_previous_transaction: Some(true),
-            // uncomment the following in the next PR
-            // show_display: Some(false),
-            show_content: Some(true),
-            show_storage_rebate: Some(true),
+            show_bcs: false,
+            show_type: true,
+            show_owner: true,
+            show_previous_transaction: true,
+            show_display: false,
+            show_content: true,
+            show_storage_rebate: true,
         }
+    }
+
+    pub fn with_content(mut self) -> Self {
+        self.show_content = true;
+        self
+    }
+
+    pub fn with_owner(mut self) -> Self {
+        self.show_owner = true;
+        self
+    }
+
+    pub fn with_type(mut self) -> Self {
+        self.show_type = true;
+        self
+    }
+
+    pub fn with_display(mut self) -> Self {
+        self.show_display = true;
+        self
+    }
+
+    pub fn with_bcs(mut self) -> Self {
+        self.show_bcs = true;
+        self
     }
 }
 
-impl Default for SuiObjectDataOptions {
-    fn default() -> Self {
-        Self {
-            show_type: Some(false),
-            show_owner: Some(false),
-            show_previous_transaction: Some(false),
-            // uncomment the following in the next PR
-            // show_display: Some(false),
-            show_content: Some(false),
-            show_bcs: Some(false),
-            show_storage_rebate: Some(false),
-        }
-    }
-}
-
-impl TryFrom<(ObjectRead, Option<SuiObjectDataOptions>)> for SuiObjectResponse {
+impl TryFrom<(ObjectRead, SuiObjectDataOptions)> for SuiObjectResponse {
     type Error = anyhow::Error;
 
     fn try_from(
-        (object_read, options): (ObjectRead, Option<SuiObjectDataOptions>),
+        (object_read, options): (ObjectRead, SuiObjectDataOptions),
     ) -> Result<Self, Self::Error> {
         match object_read {
             ObjectRead::NotExists(id) => Ok(Self::NotExists(id)),
@@ -277,7 +274,7 @@ impl
         ObjectRef,
         Object,
         Option<MoveStructLayout>,
-        Option<SuiObjectDataOptions>,
+        SuiObjectDataOptions,
     )> for SuiObjectData
 {
     type Error = anyhow::Error;
@@ -287,30 +284,18 @@ impl
             ObjectRef,
             Object,
             Option<MoveStructLayout>,
-            Option<SuiObjectDataOptions>,
+            SuiObjectDataOptions,
         ),
     ) -> Result<Self, Self::Error> {
-        let options = options.unwrap_or_default();
-        let default_options = SuiObjectDataOptions::default();
-        // It is safe to unwrap because default value are all Some(bool)
-        let show_type = options
-            .show_type
-            .unwrap_or_else(|| default_options.show_type.unwrap());
-        let show_owner = options
-            .show_owner
-            .unwrap_or_else(|| default_options.show_owner.unwrap());
-        let show_previous_transaction = options
-            .show_previous_transaction
-            .unwrap_or_else(|| default_options.show_previous_transaction.unwrap());
-        let show_content = options
-            .show_content
-            .unwrap_or_else(|| default_options.show_content.unwrap());
-        let show_bcs = options
-            .show_bcs
-            .unwrap_or_else(|| default_options.show_bcs.unwrap());
-        let show_storage_rebate = options
-            .show_storage_rebate
-            .unwrap_or_else(|| default_options.show_storage_rebate.unwrap());
+        let SuiObjectDataOptions {
+            show_type,
+            show_owner,
+            show_previous_transaction,
+            show_content,
+            show_bcs,
+            show_storage_rebate,
+            ..
+        } = options;
 
         let (object_id, version, digest) = object_ref;
         let type_ = if show_type {
@@ -367,7 +352,37 @@ impl
             },
             content,
             bcs,
+            display: None,
         })
+    }
+}
+
+impl
+    TryFrom<(
+        ObjectRef,
+        Object,
+        Option<MoveStructLayout>,
+        SuiObjectDataOptions,
+        Option<BTreeMap<String, String>>,
+    )> for SuiObjectData
+{
+    type Error = anyhow::Error;
+
+    fn try_from(
+        (object_ref, o, layout, options, display_fields): (
+            ObjectRef,
+            Object,
+            Option<MoveStructLayout>,
+            SuiObjectDataOptions,
+            Option<BTreeMap<String, String>>,
+        ),
+    ) -> Result<Self, Self::Error> {
+        let show_display = options.show_display;
+        let mut data: SuiObjectData = (object_ref, o, layout, options).try_into()?;
+        if show_display {
+            data.display = display_fields;
+        }
+        Ok(data)
     }
 }
 
@@ -808,36 +823,6 @@ impl SuiPastObjectResponse {
     }
 }
 
-impl TryFrom<PastObjectRead> for SuiPastObjectResponse {
-    type Error = anyhow::Error;
-
-    fn try_from(value: PastObjectRead) -> Result<Self, Self::Error> {
-        match value {
-            PastObjectRead::ObjectNotExists(id) => Ok(Self::ObjectNotExists(id)),
-            PastObjectRead::VersionFound(object_ref, o, layout) => Ok(Self::VersionFound(
-                (
-                    object_ref,
-                    o,
-                    layout,
-                    Some(SuiObjectDataOptions::full_content()),
-                )
-                    .try_into()?,
-            )),
-            PastObjectRead::ObjectDeleted(oref) => Ok(Self::ObjectDeleted(oref.into())),
-            PastObjectRead::VersionNotFound(id, seq_num) => Ok(Self::VersionNotFound(id, seq_num)),
-            PastObjectRead::VersionTooHigh {
-                object_id,
-                asked_version,
-                latest_version,
-            } => Ok(Self::VersionTooHigh {
-                object_id,
-                asked_version,
-                latest_version,
-            }),
-        }
-    }
-}
-
 #[derive(Debug, Deserialize, Serialize, JsonSchema, Clone, Eq, PartialEq)]
 #[serde(rename = "MovePackage", rename_all = "camelCase")]
 pub struct SuiMovePackage {
@@ -849,6 +834,37 @@ impl From<MoveModulePublish> for SuiMovePackage {
         Self {
             // In case of failed publish transaction, disassemble can fail, we can only return empty module map in that case.
             disassembled: disassemble_modules(m.modules.iter()).unwrap_or_default(),
+        }
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, JsonSchema, Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[serde(rename = "ObjectInfo", rename_all = "camelCase")]
+pub struct SuiObjectInfo {
+    pub object_id: ObjectID,
+    pub version: SequenceNumber,
+    pub digest: ObjectDigest,
+    #[serde(rename = "type")]
+    pub type_: String,
+    pub owner: Owner,
+    pub previous_transaction: TransactionDigest,
+}
+
+impl SuiObjectInfo {
+    pub fn to_object_ref(&self) -> ObjectRef {
+        (self.object_id, self.version, self.digest)
+    }
+}
+
+impl From<ObjectInfo> for SuiObjectInfo {
+    fn from(info: ObjectInfo) -> Self {
+        Self {
+            object_id: info.object_id,
+            version: info.version,
+            digest: info.digest,
+            type_: format!("{}", info.type_),
+            owner: info.owner,
+            previous_transaction: info.previous_transaction,
         }
     }
 }
