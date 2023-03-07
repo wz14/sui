@@ -5984,6 +5984,7 @@ dependencies = [
  "indexmap",
  "mockall",
  "mysten-common",
+ "mysten-metrics",
  "mysten-network",
  "mysten-util-mem",
  "narwhal-config",
