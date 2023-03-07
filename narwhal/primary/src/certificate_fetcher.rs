@@ -22,7 +22,7 @@ use tokio::{
     task::JoinHandle,
     time::{sleep, timeout, Instant},
 };
-use tracing::{debug, error, instrument, trace, warn};
+use tracing::{debug, error, info, instrument, trace, warn};
 use types::{
     error::{DagError, DagResult},
     metered_channel::Receiver,
@@ -211,6 +211,11 @@ impl CertificateFetcher {
         // Skip fetching certificates at or below the gc round.
         let gc_round = self.gc_round();
         // Skip fetching certificates that already exist locally.
+        let timer = self
+            .state
+            .metrics
+            .scan_for_written_rounds_latency
+            .start_timer();
         let mut written_rounds = BTreeMap::<PublicKey, BTreeSet<Round>>::new();
         for (origin, _) in self.committee.authorities() {
             // Initialize written_rounds for all authorities, because the handler only sends back
@@ -232,6 +237,8 @@ impl CertificateFetcher {
             }
         };
 
+        drop(timer);
+
         self.targets.retain(|origin, target_round| {
             let last_written_round = written_rounds.get(origin).map_or(gc_round, |rounds| {
                 // TODO: switch to last() after it stabilizes for BTreeSet.
@@ -247,14 +254,14 @@ impl CertificateFetcher {
             last_written_round < *target_round
         });
         if self.targets.is_empty() {
-            debug!("Certificates have caught up. Skip fetching.");
+            info!("Certificates have caught up. Skip fetching.");
             return;
         }
 
         let state = self.state.clone();
         let committee = self.committee.clone();
 
-        debug!(
+        info!(
             "Starting task to fetch missing certificates: max target {}, gc round {:?}",
             self.targets.values().max().unwrap_or(&0),
             gc_round
@@ -267,7 +274,7 @@ impl CertificateFetcher {
                 let now = Instant::now();
                 match run_fetch_task(state.clone(), committee, gc_round, written_rounds).await {
                     Ok(_) => {
-                        debug!(
+                        info!(
                             "Finished task to fetch certificates successfully, elapsed = {}s",
                             now.elapsed().as_secs_f64()
                         );
@@ -314,7 +321,7 @@ async fn run_fetch_task(
         .certificate_fetcher_num_certificates_processed
         .add(num_certs_fetched as i64);
 
-    debug!("Successfully fetched and processed {num_certs_fetched} certificates");
+    info!("Successfully fetched and processed {num_certs_fetched} certificates");
     Ok(())
 }
 
@@ -341,17 +348,17 @@ async fn fetch_certificates_helper(
         + PARALLEL_FETCH_REQUEST_ADDITIONAL_TIMEOUT;
     let fetch_callback = async move {
         // TODO: shuffle by stake weight instead.
-        debug!("Starting to fetch certificates");
+        info!("Starting to fetch certificates");
         let mut fut = FuturesUnordered::new();
         // Loop until one peer returns with certificates, or no peer does.
         loop {
             if let Some(peer) = peers.pop() {
                 let request = request.clone();
                 fut.push(monitored_future!(async move {
-                    debug!("Sending out fetch request in parallel to {peer}");
+                    info!("Sending out fetch request in parallel to {peer}");
                     let result = network.fetch_certificates(&peer, request).await;
                     if let Ok(resp) = &result {
-                        debug!(
+                        info!(
                             "Fetched {} certificates from peer {peer}",
                             resp.certificates.len()
                         );
@@ -370,12 +377,12 @@ async fn fetch_certificates_helper(
                         return Some(resp);
                     }
                     Some(Err(e)) => {
-                        debug!("Failed to fetch certificates: {e}");
+                        info!("Failed to fetch certificates: {e}");
                         // Issue request to another primary immediately.
                         continue;
                     }
                     None => {
-                        debug!("No peer can be reached for fetching certificates!");
+                        info!("No peer can be reached for fetching certificates!");
                         // Last or all requests to peers may have failed immediately, so wait
                         // before returning to avoid retrying fetching immediately.
                         sleep(request_interval).await;
@@ -392,7 +399,7 @@ async fn fetch_certificates_helper(
     match timeout(fetch_timeout, fetch_callback).await {
         Ok(result) => result,
         Err(e) => {
-            debug!("Timed out fetching certificates: {e}");
+            info!("Timed out fetching certificates: {e}");
             None
         }
     }
@@ -424,6 +431,7 @@ async fn process_certificates_helper(
             let sync = synchronizer.clone();
             // Use threads dedicated to computation heavy work.
             spawn_blocking(move || {
+                let _verify_scope = monitored_scope("AK-sanitize-fetched-certificate");
                 for c in &certs {
                     sync.sanitize_certificate(c)?;
                 }
