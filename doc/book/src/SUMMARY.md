@@ -21,7 +21,6 @@
     - [Hot Potato](./patterns/hot-potato.md)
     - [ID Pointer](./patterns/id-pointer.md)
 - [Samples](./samples/README.md)
-    - [Make an NFT](./samples/nft.md)
+    - [Createa a Collection](./samples/collectible.md)
     - [Create a Coin (ERC20)](./samples/coin.md)
 - [Additional Resources](./LINKS.md)
-    <!-- - [Make a Character](./samples/character.md) -->
