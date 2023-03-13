@@ -228,7 +228,7 @@ async fn access_clock_object_test() {
 
     // Get the authority configs and spawn them. Note that it is important to not drop
     // the handles (or the authorities will stop).
-    let (configs, mut gas_objects) = test_authority_configs_with_objects(gas_objects.clone());
+    let (configs, mut gas_objects) = test_authority_configs_with_objects(gas_objects);
     let handles = spawn_test_authorities(&configs).await;
 
     // Publish the move package to all authorities and get its package ID.
