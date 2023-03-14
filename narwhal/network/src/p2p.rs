@@ -285,7 +285,7 @@ impl WorkerRpc for anemo::Network {
         peer: NetworkPublicKey,
         batches: Vec<BatchDigest>,
     ) -> Result<Vec<Option<Batch>>> {
-        const BATCH_REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
+        const BATCH_REQUEST_TIMEOUT: Duration = Duration::from_secs(20);
 
         let peer_id = PeerId(peer.0.to_bytes());
 

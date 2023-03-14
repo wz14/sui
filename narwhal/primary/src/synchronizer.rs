@@ -488,15 +488,20 @@ impl Synchronizer {
         sanitize: bool,
         early_suspend: bool,
     ) -> DagResult<()> {
-        let _scope = monitored_scope("AK-process_certificate_internal");
+        let scope_part_1 = monitored_scope("AK-process_certificate_internal_part_1");
         let digest = certificate.digest();
+        let cert_store_contains_scope =
+            monitored_scope("AK-process_certificate_internal::cert_store.contains");
         if self.inner.certificate_store.contains(&digest)? {
             trace!("Certificate {digest:?} has already been processed. Skip processing.");
             self.inner.metrics.duplicate_certificates_processed.inc();
             return Ok(());
         }
+        drop(cert_store_contains_scope);
         // Ensure parents are checked if !early_suspend.
         // See comments above `try_accept_fetched_certificate()` for details.
+
+        let scope_part_1_3 = monitored_scope("AK-process_certificate_internal_part_1.3");
         if early_suspend {
             if let Some(notify) = self.inner.state.lock().await.check_suspended(&digest) {
                 trace!("Certificate {digest:?} is still suspended. Skip processing.");
@@ -508,15 +513,18 @@ impl Synchronizer {
                 return Err(DagError::Suspended(notify));
             }
         }
+        drop(scope_part_1_3);
+        let scope_part_1_7 = monitored_scope("AK-process_certificate_internal_part_1.7");
         if sanitize {
             self.sanitize_certificate(&certificate)?;
         }
-
+        drop(scope_part_1_7);
         debug!(
             "Processing certificate {:?} round:{:?}",
             certificate,
             certificate.round()
         );
+        let scope_part_1_9 = monitored_scope("AK-process_certificate_internal_part_1.9");
 
         let certificate_source = if self.inner.name.eq(&certificate.origin()) {
             "own"
@@ -533,6 +541,7 @@ impl Synchronizer {
             .highest_received_round
             .with_label_values(&[certificate_source])
             .set(highest_received_round as i64);
+        drop(scope_part_1_9);
 
         // Let the proposer draw early conclusions from a certificate at this round and epoch, without its
         // parents or payload (which we may not have yet).
@@ -542,11 +551,15 @@ impl Synchronizer {
         //
         // This allows the proposer not to fire proposals at rounds strictly below the certificate we witnessed.
         let minimal_round_for_parents = certificate.round().saturating_sub(1);
+
+        let tx_parents_send_scope =
+            monitored_scope("AK-process_certificate_internal::tx_parents.send");
         self.inner
             .tx_parents
             .send((vec![], minimal_round_for_parents, certificate.epoch()))
             .await
             .map_err(|_| DagError::ShuttingDown)?;
+        drop(tx_parents_send_scope);
 
         // Instruct workers to download any missing batches referenced in this certificate.
         // Since this header got certified, we are sure that all the data it refers to (ie. its batches and its parents) are available.
@@ -555,9 +568,12 @@ impl Synchronizer {
         let header = certificate.header.clone();
         let sync_network = network.clone();
         let max_age = self.inner.gc_depth.saturating_sub(1);
+        let acquire_synchronizer_lock_scope =
+            monitored_scope("AK-process_certificate_internal::acquire-synchronizer-lock");
         self.inner.batch_tasks.lock().spawn(async move {
             Synchronizer::sync_batches_internal(inner, &header, sync_network, max_age, true).await
         });
+        drop(acquire_synchronizer_lock_scope);
 
         // The state lock must be held for the rest of the function, to ensure updating state,
         // writing certificates into storage and sending certificates to consensus are atomic.
@@ -565,6 +581,9 @@ impl Synchronizer {
         // and certificates are sent to consensus in causal order.
         // It is possible to reduce the critical section below, but it seems unnecessary for now.
         let mut state = self.inner.state.lock().await;
+
+        drop(scope_part_1);
+        let scope_part_2 = monitored_scope("AK-process_certificate_internal_part_2");
 
         // Ensure parents are checked if !early_suspend.
         // See comments above `try_accept_fetched_certificate()` for details.
@@ -598,7 +617,10 @@ impl Synchronizer {
                     .inc();
                 // There is no upper round limit to suspended certificates. Currently there is no
                 // memory usage issue and this will speed up catching up. But we can revisit later.
+                let state_insert_scope =
+                    monitored_scope("AK-process_certificate_internal::state.insert");
                 let notify = state.insert(certificate, missing_parents, !early_suspend);
+                drop(state_insert_scope);
                 self.inner
                     .metrics
                     .certificates_currently_suspended
@@ -612,16 +634,20 @@ impl Synchronizer {
         self.inner
             .accept_certificate_internal(&state, certificate)
             .await?;
+        let accept_suspended_certificate_scope =
+            monitored_scope("AK-process_certificate_internal::accept_suspended_certificate");
         for suspended in suspended_certs {
             self.inner
                 .accept_suspended_certificate(&state, suspended)
                 .await?;
         }
+        drop(accept_suspended_certificate_scope);
 
         self.inner
             .metrics
             .certificates_currently_suspended
             .set(state.num_suspended() as i64);
+        drop(scope_part_2);
 
         Ok(())
     }
