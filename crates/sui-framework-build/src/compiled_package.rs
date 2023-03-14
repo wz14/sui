@@ -502,6 +502,9 @@ pub struct PackageDependencies {
     pub unpublished: BTreeSet<Symbol>,
     /// Set of dependencies with invalid `published-at` addresses.
     pub invalid: BTreeMap<Symbol, String>,
+    /// Subset of `unpublished` dependencies to be published, but which contain
+    /// non-zero module self-addresses (package name, module name, module address).
+    pub error_unpublished: BTreeMap<Symbol, (Symbol, AccountAddress)>,
 }
 
 /// Gather transitive package dependencies, partitioned into two sets:
@@ -511,6 +514,7 @@ pub fn gather_dependencies(resolution_graph: &ResolvedGraph) -> PackageDependenc
     let mut published = BTreeMap::new();
     let mut unpublished = BTreeSet::new();
     let mut invalid = BTreeMap::new();
+    let mut error_unpublished = BTreeMap::new();
 
     for name in resolution_graph.graph.package_table.keys() {
         if let Some(package) = &resolution_graph.package_table.get(name) {
@@ -522,6 +526,12 @@ pub fn gather_dependencies(resolution_graph: &ResolvedGraph) -> PackageDependenc
 
             if value.is_none() {
                 unpublished.insert(*name);
+                // record unpublished packages with non-zero module self-addresses
+                for (module, addr) in &package.resolved_table {
+                    if *addr != AccountAddress::ZERO {
+                        error_unpublished.insert(*name, (*module, *addr));
+                    }
+                }
                 continue;
             }
 
@@ -537,6 +547,7 @@ pub fn gather_dependencies(resolution_graph: &ResolvedGraph) -> PackageDependenc
         published,
         unpublished,
         invalid,
+        error_unpublished,
     }
 }
 
@@ -581,6 +592,29 @@ pub fn check_invalid_dependencies(invalid: BTreeMap<Symbol, String>) -> Result<(
             )
         })
         .collect::<Vec<_>>();
+
+    Err(SuiError::ModulePublishFailure {
+        error: error_messages.join("\n"),
+    })
+}
+
+pub fn check_unpublished_dependencies_have_zero_self_addresses(
+    error_unpublished: &BTreeMap<Symbol, (Symbol, AccountAddress)>,
+) -> Result<(), SuiError> {
+    if error_unpublished.is_empty() {
+        return Ok(());
+    }
+
+    let mut error_messages = vec![];
+    error_messages
+        .push("The following modules in package dependencies set a non-zero address:".into());
+    for (package, (module, addr)) in error_unpublished {
+        error_messages.push(format!(
+            "Package {package} — Module {module} sets non-zero address {addr}"
+        ))
+    }
+    error_messages.push("If these packages really are unpublished, the addresses should be set to \"0x0\" when publishing. If they are already published, ensure they specify the address in the `published-at` of the Move.toml manifest and remove --with-unpublished-dependencies from the command line command. If neither these changes are possible, take action to first publish package dependencies, or alternatively set addresses to 0x0.".into(),
+    );
 
     Err(SuiError::ModulePublishFailure {
         error: error_messages.join("\n"),

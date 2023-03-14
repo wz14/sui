@@ -33,7 +33,7 @@ use sui_types::error::SuiError;
 use shared_crypto::intent::Intent;
 use sui_framework_build::compiled_package::{
     build_from_resolution_graph, check_invalid_dependencies, check_unpublished_dependencies,
-    gather_dependencies, BuildConfig,
+    check_unpublished_dependencies_have_zero_self_addresses, gather_dependencies, BuildConfig,
 };
 use sui_json::SuiJsonValue;
 use sui_json_rpc_types::{
@@ -485,7 +485,16 @@ impl SuiClientCommands {
                 check_invalid_dependencies(dependencies.invalid)?;
 
                 if !with_unpublished_dependencies {
+                    // We expect and check for a `published-at` value for unpublished dependencies.
                     check_unpublished_dependencies(dependencies.unpublished)?;
+                } else {
+                    // Here we don't expect a `published-at` value. As a sanity check, we expect
+                    // dependencies-to-be-published to have 0x0 self-addresses (if they are
+                    // non-zero, it implies that the package or modules _may_ in fact published, or
+                    // otherwise a mistake). So: error if we find self addresses not set to 0x0.
+                    check_unpublished_dependencies_have_zero_self_addresses(
+                        &dependencies.error_unpublished,
+                    )?;
                 };
 
                 let compiled_package = build_from_resolution_graph(

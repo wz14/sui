@@ -669,6 +669,48 @@ async fn test_package_publish_command_with_unpublished_dependency_fails(
 }
 
 #[sim_test]
+async fn test_package_publish_command_non_zero_unpublished_dep_fails() -> Result<(), anyhow::Error>
+{
+    let with_unpublished_dependencies = true; // Value under test, results in error response for module with non-zero deps.
+
+    let mut test_cluster = TestClusterBuilder::new().build().await?;
+    let address = test_cluster.get_address_0();
+    let context = &mut test_cluster.wallet;
+
+    let client = context.get_client().await?;
+    let object_refs = client
+        .read_api()
+        .get_objects_owned_by_address(address)
+        .await?;
+
+    let gas_obj_id = object_refs.first().unwrap().object_id;
+
+    let mut package_path = PathBuf::from(TEST_DATA_DIR);
+    package_path.push("module_publish_with_unpublished_dependency_with_non_zero_address");
+    let build_config = BuildConfig::default();
+    let result = SuiClientCommands::Publish {
+        package_path,
+        build_config,
+        gas: Some(gas_obj_id),
+        gas_budget: 20_000,
+        skip_dependency_verification: false,
+        with_unpublished_dependencies,
+    }
+    .execute(context)
+    .await;
+
+    let expect = expect![[r#"
+        Err(
+            ModulePublishFailure {
+                error: "The following modules in package dependencies set a non-zero address:\nPackage UnpublishedNonZeroAddress — Module non_zero sets non-zero address 0000000000000000000000000000000000000000000000000000000000000bad\nIf these packages really are unpublished, the addresses should be set to \"0x0\" when publishing. If they are already published, ensure they specify the address in the `published-at` of the Move.toml manifest and remove --with-unpublished-dependencies from the command line command. If neither these changes are possible, take action to first publish package dependencies, or alternatively set addresses to 0x0.",
+            },
+        )
+    "#]];
+    expect.assert_debug_eq(&result);
+    Ok(())
+}
+
+#[sim_test]
 async fn test_package_publish_command_failure_invalid() -> Result<(), anyhow::Error> {
     let with_unpublished_dependencies = true; // Invalid packages should fail to pubilsh, even if we allow unpublished dependencies.
 
