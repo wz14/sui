@@ -26,7 +26,7 @@ use std::{
 };
 use sui_protocol_config::SupportedProtocolVersions;
 use sui_types::base_types::AuthorityName;
-use sui_types::committee::ProtocolVersion;
+use sui_types::committee::{Committee, ProtocolVersion};
 use sui_types::crypto::{
     generate_proof_of_possession, get_key_pair_from_rng, AccountKeyPair, AuthorityKeyPair,
     AuthorityPublicKeyBytes, KeypairTraits, NetworkKeyPair, NetworkPublicKey, PublicKey,
@@ -37,7 +37,7 @@ use sui_types::object::Object;
 pub enum CommitteeConfig {
     Size(NonZeroUsize),
     Validators(Vec<ValidatorConfigInfo>),
-    Keys(Vec<AccountKeyPair>),
+    AccountKeys(Vec<AccountKeyPair>),
 }
 
 enum ValidatorIpSelection {
@@ -133,7 +133,7 @@ impl<R> ConfigBuilder<R> {
     }
 
     pub fn with_validator_account_keys(mut self, keys: Vec<AccountKeyPair>) -> Self {
-        self.committee = Some(CommitteeConfig::Keys(keys));
+        self.committee = Some(CommitteeConfig::AccountKeys(keys));
         self
     }
 
@@ -213,42 +213,54 @@ impl<R: rand::RngCore + rand::CryptoRng> ConfigBuilder<R> {
 
         let mut rng = self.rng.take().unwrap();
 
-        let validator_with_account_key =
-            |idx: usize, account_key_pair: AccountKeyPair, rng: &mut R| -> ValidatorConfigInfo {
-                let (key_pair, worker_key_pair, network_key_pair): (
-                    AuthorityKeyPair,
-                    NetworkKeyPair,
-                    NetworkKeyPair,
-                ) = (
-                    get_key_pair_from_rng(rng).1,
-                    get_key_pair_from_rng(rng).1,
-                    get_key_pair_from_rng(rng).1,
-                );
+        let validator_with_account_key = |idx: usize,
+                                          protocol_key_pair: AuthorityKeyPair,
+                                          account_key_pair: AccountKeyPair,
+                                          rng: &mut R|
+         -> ValidatorConfigInfo {
+            let (worker_key_pair, network_key_pair): (NetworkKeyPair, NetworkKeyPair) =
+                (get_key_pair_from_rng(rng).1, get_key_pair_from_rng(rng).1);
 
-                self.build_validator(
-                    idx,
-                    key_pair,
-                    worker_key_pair,
-                    account_key_pair.into(),
-                    network_key_pair,
-                )
-            };
+            self.build_validator(
+                idx,
+                protocol_key_pair,
+                worker_key_pair,
+                account_key_pair.into(),
+                network_key_pair,
+            )
+        };
 
         let validators = match committee {
-            CommitteeConfig::Size(size) => (0..size.get())
-                .map(|i| {
-                    let account_key_pair = get_key_pair_from_rng::<AccountKeyPair, _>(&mut rng).1;
-                    validator_with_account_key(i, account_key_pair, &mut rng)
-                })
-                .collect::<Vec<_>>(),
+            CommitteeConfig::Size(size) => {
+                // We always get fixed protocol keys from this function (which is isolated from
+                // external test randomness because it uses a fixed seed). Necessary because some
+                // tests call `make_tx_certs_and_signed_effects`, which locally forges a cert using
+                // this same committee.
+                let (_, keys) = Committee::new_simple_test_committee_of_size(size.into());
+
+                keys.into_iter()
+                    .enumerate()
+                    .map(|(i, authority_key)| {
+                        let account_key_pair =
+                            get_key_pair_from_rng::<AccountKeyPair, _>(&mut rng).1;
+                        validator_with_account_key(i, authority_key, account_key_pair, &mut rng)
+                    })
+                    .collect::<Vec<_>>()
+            }
 
             CommitteeConfig::Validators(v) => v,
 
-            CommitteeConfig::Keys(keys) => keys
-                .into_iter()
-                .enumerate()
-                .map(|(i, keypair)| validator_with_account_key(i, keypair, &mut rng))
-                .collect::<Vec<_>>(),
+            CommitteeConfig::AccountKeys(keys) => {
+                // See above re fixed protocol keys
+                let (_, protocol_keys) = Committee::new_simple_test_committee_of_size(keys.len());
+                keys.into_iter()
+                    .zip(protocol_keys.into_iter())
+                    .enumerate()
+                    .map(|(i, (account_key, protocol_key))| {
+                        validator_with_account_key(i, protocol_key, account_key, &mut rng)
+                    })
+                    .collect::<Vec<_>>()
+            }
         };
 
         self.build_with_validators(rng, validators)
