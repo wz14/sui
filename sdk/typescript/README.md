@@ -175,26 +175,6 @@ const txns = await provider.multiGetTransactions({
 });
 ```
 
-Fetch transaction events from a transaction digest:
-
-```typescript
-import { JsonRpcProvider } from '@mysten/sui.js';
-const provider = new JsonRpcProvider();
-const txEvents = await provider.getEventsByTransaction(
-  '6mn5W1CczLwitHCO9OIUbqirNrQ0cuKdyxaNe16SAME=',
-);
-```
-
-Fetch events by sender address:
-
-```typescript
-import { JsonRpcProvider } from '@mysten/sui.js';
-const provider = new JsonRpcProvider();
-const senderEvents = await provider.getEventsBySender(
-  '0xbff6ccc8707aa517b4f1b95750a2a8c666012df3',
-);
-```
-
 Fetch coins of type `0x168da5bf1f48dafc111b0a488fa454aca95e0b5e::usdc::USDC` owned by an address:
 
 ```typescript
@@ -317,17 +297,29 @@ const result = await signer.signAndExecuteTransaction({ transaction: tx });
 console.log({ result });
 ```
 
-Subscribe to all events created by transactions sent by account `0xbff6ccc8707aa517b4f1b95750a2a8c666012df3`
+Querying events created by transactions sent by account
+`0xbff6ccc8707aa517b4f1b95750a2a8c666012df3`
 
 ```typescript
 import { JsonRpcProvider } from '@mysten/sui.js';
 const provider = new JsonRpcProvider();
+const events = provider.queryEvents({
+  query: { Sender: toolbox.address() },
+  limit: 2,
+});
+```
+
+Subscribe to all events created by transactions sent by account `0xbff6ccc8707aa517b4f1b95750a2a8c666012df3`
+
+```typescript
+import { JsonRpcProvider, SuiEvent } from '@mysten/sui.js';
+const provider = new JsonRpcProvider();
 
 // calls RPC method 'sui_subscribeEvent' with params:
-// [ { SenderAddress: '0xbff6ccc8707aa517b4f1b95750a2a8c666012df3' } ]
+// [ { Sender: '0xbff6ccc8707aa517b4f1b95750a2a8c666012df3' } ]
 const subscriptionId = await provider.subscribeEvent({
-  filter: { SenderAddress: '0xbff6ccc8707aa517b4f1b95750a2a8c666012df3' },
-  onMessage(event: SuiEventEnvelope) {
+  filter: { Sender: '0xbff6ccc8707aa517b4f1b95750a2a8c666012df3' },
+  onMessage(event: SuiEvent) {
     // handle subscription notification message here. This function is called once per subscription message.
   },
 });
@@ -342,20 +334,16 @@ const subFoundAndRemoved = await provider.unsubscribeEvent({
 Subscribe to all events created by a package's `nft` module
 
 ```typescript
-import { JsonRpcProvider } from '@mysten/sui.js';
+import { JsonRpcProvider, SuiEvent } from '@mysten/sui.js';
 const provider = new JsonRpcProvider();
 
-const packageObjectId = '0x...';
+const package = '0x...';
 const devnetNftFilter = {
-  All: [
-    { EventType: 'MoveEvent' },
-    { Package: packageObjectId },
-    { Module: 'nft' },
-  ],
+    { MoveModule: { package, module: 'nft'} },
 };
 const devNftSub = await provider.subscribeEvent({
   filter: devnetNftFilter,
-  onMessage(event: SuiEventEnvelope) {
+  onMessage(event: SuiEvent) {
     // handle subscription notification message here
   },
 });

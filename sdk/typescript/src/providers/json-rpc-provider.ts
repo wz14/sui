@@ -64,7 +64,7 @@ import { SerializedSignature } from '../cryptography/signature';
 import { Connection, devnetConnection } from '../rpc/connection';
 import { Transaction } from '../builder';
 
-export const TARGETED_RPC_VERSION = '0.27.0';
+export const TARGETED_RPC_VERSION = '0.28.0';
 
 export interface PaginationArguments {
   /** Optional paging cursor */
