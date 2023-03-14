@@ -329,17 +329,28 @@ async fn test_validator_resign_effects() {
 
 #[sim_test]
 async fn test_inactive_validator_pool_read() {
-    let init_configs = test_and_configure_authority_configs(5);
-    let leaving_validator = &init_configs.validator_configs()[0];
-    let address = leaving_validator.sui_address();
+    let leaving_validator_account_key = gen_keys(5).pop().unwrap();
+    let address: SuiAddress = leaving_validator_account_key.public().into();
 
     let gas_objects = generate_test_gas_objects_with_owner(1, address);
     let stake = Object::new_gas_with_balance_and_owner_for_testing(25_000_000_000_000_000, address);
     let mut genesis_objects = vec![stake.clone()];
     genesis_objects.extend(gas_objects.clone());
 
-    let authorities =
-        spawn_test_authorities(genesis_objects.clone().into_iter(), &init_configs).await;
+    let init_configs = ConfigBuilder::new_with_temp_dir()
+        .rng(StdRng::from_seed([0; 32]))
+        .with_validator_account_keys(gen_keys(5))
+        .with_objects(genesis_objects.clone())
+        .build();
+
+    let gas_objects: Vec<_> = gas_objects
+        .into_iter()
+        .map(|o| init_configs.genesis.object(o.id()).unwrap())
+        .collect();
+
+    let stake = init_configs.genesis.object(stake.id()).unwrap();
+
+    let authorities = spawn_test_authorities(&init_configs).await;
 
     let staking_pool_id = authorities[0].with(|node| {
         node.state()
@@ -368,7 +379,7 @@ async fn test_inactive_validator_pool_read() {
         10000,
     )
     .unwrap();
-    let transaction = to_sender_signed_transaction(tx_data, leaving_validator.account_key_pair());
+    let transaction = to_sender_signed_transaction(tx_data, &leaving_validator_account_key);
     let effects = execute_transaction(&authorities, transaction)
         .await
         .unwrap();
@@ -398,20 +409,19 @@ async fn test_inactive_validator_pool_read() {
     })
 }
 
+// generate N keys - use a fixed RNG so we can regenerate the same set again later (keypairs
+// are not Clone)
+fn gen_keys(count: usize) -> Vec<AccountKeyPair> {
+    let mut rng = StdRng::from_seed([0; 32]);
+    (0..count)
+        .into_iter()
+        .map(|_| get_key_pair_from_rng::<AccountKeyPair, _>(&mut rng).1)
+        .collect()
+}
+
 #[sim_test]
 async fn test_reconfig_with_committee_change_basic() {
     // This test exercise the full flow of a validator joining the network, catch up and then leave.
-
-    // generate N keys - use a fixed RNG so we can regenerate the same set again later (keypairs
-    // are not Clone)
-    let gen_keys = |count| {
-        let mut rng = StdRng::from_seed([0; 32]);
-        let mut account_keys: Vec<_> = (0..count)
-            .into_iter()
-            .map(|_| get_key_pair_from_rng::<AccountKeyPair, _>(&mut rng).1)
-            .collect();
-        account_keys
-    };
 
     let new_validator_key = gen_keys(5).pop().unwrap();
     let new_validator_address: SuiAddress = new_validator_key.public().into();
@@ -427,13 +437,13 @@ async fn test_reconfig_with_committee_change_basic() {
     let mut objects = vec![stake.clone()];
     objects.extend(gas_objects.clone());
 
-    let mut init_configs = ConfigBuilder::new_with_temp_dir()
+    let init_configs = ConfigBuilder::new_with_temp_dir()
         .rng(StdRng::from_seed([0; 32]))
         .with_validator_account_keys(gen_keys(4))
         .with_objects(objects.clone())
         .build();
 
-    let mut new_configs = ConfigBuilder::new_with_temp_dir()
+    let new_configs = ConfigBuilder::new_with_temp_dir()
         .rng(StdRng::from_seed([0; 32]))
         .with_validator_account_keys(gen_keys(5))
         .with_objects(objects.clone())
