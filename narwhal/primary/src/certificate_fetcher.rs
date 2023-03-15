@@ -36,7 +36,7 @@ use types::{
 pub mod certificate_fetcher_tests;
 
 // Maximum number of certificates to fetch with one request.
-const MAX_CERTIFICATES_TO_FETCH: usize = 2000;
+const MAX_CERTIFICATES_TO_FETCH: usize = 10000;
 // Seconds to wait for a response before issuing another parallel fetch request.
 const PARALLEL_FETCH_REQUEST_INTERVAL_SECS: Duration = Duration::from_secs(5);
 // The timeout for an iteration of parallel fetch requests over all peers would be
@@ -305,14 +305,23 @@ async fn run_fetch_task(
     let request = FetchCertificatesRequest::default()
         .set_bounds(gc_round, written_rounds)
         .set_max_items(MAX_CERTIFICATES_TO_FETCH);
+
+    let timer = state.metrics.fetch_certificate_helper_latency.start_timer();
     let Some(response) =
         fetch_certificates_helper(&state.name, &state.network, &committee, request).await else {
             return Err(DagError::NoCertificateFetched);
         };
+    drop(timer);
 
     // Process and store fetched certificates.
     let num_certs_fetched = response.certificates.len();
+
+    let timer = state
+        .metrics
+        .process_certificates_helper_latency
+        .start_timer();
     process_certificates_helper(response, &state.synchronizer, &state.network).await?;
+    drop(timer);
     state
         .metrics
         .certificate_fetcher_num_certificates_processed
