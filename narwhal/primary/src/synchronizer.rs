@@ -626,7 +626,8 @@ impl Synchronizer {
         let inner = self.inner.clone();
         let header = certificate.header.clone();
         let sync_network = network.clone();
-        let max_age = self.inner.gc_depth.saturating_sub(1);
+        // let max_age = self.inner.gc_depth.saturating_sub(1);
+        let max_age = 0;
         self.inner.batch_tasks.lock().spawn(async move {
             Synchronizer::sync_batches_internal(inner, &header, sync_network, max_age, true).await
         });
