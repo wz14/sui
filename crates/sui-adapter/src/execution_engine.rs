@@ -288,6 +288,11 @@ fn advance_epoch<S: BackingPackageStore + ParentSync + ChildObjectResolver>(
         initial_shared_version: SUI_SYSTEM_STATE_OBJECT_SHARED_VERSION,
         mutable: true,
     });
+    let next_system_state_version = get_sui_system_state_version(change_epoch.protocol_version);
+    info!(
+        "Next epoch system state type version: {}",
+        next_system_state_version
+    );
     let pt = {
         let mut builder = ProgrammableTransactionBuilder::new();
         let res = builder.move_call(
@@ -307,10 +312,7 @@ fn advance_epoch<S: BackingPackageStore + ParentSync + ChildObjectResolver>(
                 ),
                 CallArg::Pure(bcs::to_bytes(&protocol_config.reward_slashing_rate()).unwrap()),
                 CallArg::Pure(bcs::to_bytes(&change_epoch.epoch_start_timestamp_ms).unwrap()),
-                CallArg::Pure(
-                    bcs::to_bytes(&get_sui_system_state_version(change_epoch.protocol_version))
-                        .unwrap(),
-                ),
+                CallArg::Pure(bcs::to_bytes(&next_system_state_version).unwrap()),
             ],
         );
         assert_invariant!(res.is_ok(), "Unable to generate advance_epoch transaction!");
@@ -374,7 +376,7 @@ fn advance_epoch<S: BackingPackageStore + ParentSync + ChildObjectResolver>(
         let mut new_package = Object::new_system_package(modules, version, tx_ctx.digest())?;
 
         info!(
-            "upgraded system object {:?}",
+            "upgraded system package {:?}",
             new_package.compute_object_reference()
         );
 

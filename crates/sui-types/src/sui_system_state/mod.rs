@@ -7,6 +7,8 @@ use crate::dynamic_field::get_dynamic_field_from_store;
 use crate::error::SuiError;
 use crate::storage::ObjectStore;
 use crate::sui_system_state::epoch_start_sui_system_state::EpochStartSystemState;
+#[cfg(msim)]
+use crate::sui_system_state::msim_sui_system_state_inner_v2::SimTestSuiSystemStateInnerV2;
 use crate::versioned::Versioned;
 use crate::{id::UID, MoveTypeTagTrait, SUI_FRAMEWORK_ADDRESS, SUI_SYSTEM_STATE_OBJECT_ID};
 use anyhow::Result;
@@ -22,6 +24,9 @@ use self::sui_system_state_summary::{SuiSystemStateSummary, SuiValidatorSummary}
 pub mod epoch_start_sui_system_state;
 pub mod sui_system_state_inner_v1;
 pub mod sui_system_state_summary;
+
+#[cfg(msim)]
+pub mod msim_sui_system_state_inner_v2;
 
 const SUI_SYSTEM_STATE_WRAPPER_STRUCT_NAME: &IdentStr = ident_str!("SuiSystemState");
 
@@ -81,7 +86,7 @@ pub trait SuiSystemStateTrait {
 pub enum SuiSystemState {
     V1(SuiSystemStateInnerV1),
     #[cfg(msim)]
-    V2(SuiSystemStateInnerV1),
+    VTest2(SimTestSuiSystemStateInnerV2),
 }
 
 /// This is the fixed type used by genesis.
@@ -100,6 +105,7 @@ impl SuiSystemState {
     pub fn into_genesis_version(self) -> SuiSystemStateInnerGenesis {
         match self {
             SuiSystemState::V1(inner) => inner,
+            #[cfg(msim)]
             _ => unreachable!(),
         }
     }
@@ -107,6 +113,7 @@ impl SuiSystemState {
     pub fn into_benchmark_version(self) -> SuiSystemStateInnerBenchmark {
         match self {
             SuiSystemState::V1(inner) => inner,
+            #[cfg(msim)]
             _ => unreachable!(),
         }
     }
@@ -152,6 +159,7 @@ where
 
 // This version is used to support authority_tests::test_sui_system_state_nop_upgrade.
 pub const SUI_SYSTEM_STATE_TESTING_VERSION1: u64 = u64::MAX;
+pub const SUI_SYSTEM_STATE_TESTING_VERSION2: u64 = u64::MAX - 1;
 
 pub fn get_sui_system_state<S>(object_store: &S) -> Result<SuiSystemState, SuiError>
 where
@@ -170,6 +178,12 @@ where
             let result: SuiSystemStateInnerV1 =
                 get_dynamic_field_from_store(object_store, wrapper.id.id.bytes, &wrapper.version)?;
             Ok(SuiSystemState::V1(result))
+        }
+        #[cfg(msim)]
+        SUI_SYSTEM_STATE_TESTING_VERSION2 => {
+            let result: SimTestSuiSystemStateInnerV2 =
+                get_dynamic_field_from_store(object_store, wrapper.id.id.bytes, &wrapper.version)?;
+            Ok(SuiSystemState::VTest2(result))
         }
         _ => Err(SuiError::SuiSystemStateReadError(format!(
             "Unsupported SuiSystemState version: {}",
@@ -214,10 +228,9 @@ pub fn get_sui_system_state_version(_protocol_version: ProtocolVersion) -> u64 {
     #[cfg(msim)]
     {
         if _protocol_version == ProtocolVersion::MAX_ALLOWED {
-            return 2;
+            return SUI_SYSTEM_STATE_TESTING_VERSION2;
         }
     }
-
     INIT_SYSTEM_STATE_VERSION
 }
 
