@@ -1414,9 +1414,8 @@ pub trait TransactionDataAPI {
     #[cfg(test)]
     fn gas_data_mut(&mut self) -> &mut GasData;
 
-    // TODO: this should be #[cfg(test)], but for some reason it is not visible in
-    // authority_tests.rs even though that entire module is #[cfg(test)]
-    fn expiration_mut(&mut self) -> &mut TransactionExpiration;
+    // This should be used in testing only.
+    fn expiration_mut_for_testing(&mut self) -> &mut TransactionExpiration;
 }
 
 impl TransactionDataAPI for TransactionDataV1 {
@@ -1553,7 +1552,7 @@ impl TransactionDataAPI for TransactionDataV1 {
         &mut self.gas_data
     }
 
-    fn expiration_mut(&mut self) -> &mut TransactionExpiration {
+    fn expiration_mut_for_testing(&mut self) -> &mut TransactionExpiration {
         &mut self.expiration
     }
 }
@@ -2124,7 +2123,6 @@ impl PlainTransactionInfoResponse {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HandleCertificateResponse {
     pub signed_effects: SignedTransactionEffects,
-    // TODO: Add a case for finalized transaction.
     pub events: TransactionEvents,
 }
 

@@ -468,7 +468,7 @@ impl From<sui_protocol_config::Error> for SuiError {
     }
 }
 
-// TODO these are both horribly wrong, categorization needs to be considered
+// MUSTFIX: these are both horribly wrong, categorization needs to be considered
 impl From<PartialVMError> for SuiError {
     fn from(error: PartialVMError) -> Self {
         SuiError::ModuleVerificationFailure {
