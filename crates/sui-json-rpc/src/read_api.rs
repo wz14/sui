@@ -22,12 +22,12 @@ use tracing::debug;
 use shared_crypto::intent::{AppId, Intent, IntentMessage, IntentScope, IntentVersion};
 use sui_core::authority::AuthorityState;
 use sui_json_rpc_types::{
-    BalanceChange, Checkpoint, CheckpointId, DynamicFieldPage, MoveFunctionArgType, ObjectChange,
-    ObjectValueKind, ObjectsPage, Page, SuiGetPastObjectRequest, SuiMoveNormalizedFunction,
-    SuiMoveNormalizedModule, SuiMoveNormalizedStruct, SuiMoveStruct, SuiMoveValue,
-    SuiObjectDataOptions, SuiObjectResponse, SuiPastObjectResponse, SuiTransactionEvents,
-    SuiTransactionResponse, SuiTransactionResponseOptions, SuiTransactionResponseQuery,
-    TransactionsPage,
+    BalanceChange, BigInt, Checkpoint, CheckpointId, DynamicFieldPage, MoveFunctionArgType,
+    ObjectChange, ObjectValueKind, ObjectsPage, Page, SuiGetPastObjectRequest,
+    SuiMoveNormalizedFunction, SuiMoveNormalizedModule, SuiMoveNormalizedStruct, SuiMoveStruct,
+    SuiMoveValue, SuiObjectDataOptions, SuiObjectResponse, SuiPastObjectResponse,
+    SuiTransactionEvents, SuiTransactionResponse, SuiTransactionResponseOptions,
+    SuiTransactionResponseQuery, TransactionsPage,
 };
 use sui_open_rpc::Module;
 use sui_types::base_types::{
@@ -335,8 +335,8 @@ impl ReadApiServer for ReadApi {
             .await
     }
 
-    async fn get_total_transaction_number(&self) -> RpcResult<u64> {
-        Ok(self.state.get_total_transaction_number()?)
+    async fn get_total_transaction_number(&self) -> RpcResult<BigInt> {
+        Ok(self.state.get_total_transaction_number()?.into())
     }
 
     async fn get_transactions_in_range_deprecated(

@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use sui_json_rpc::api::{cap_page_limit, ReadApiClient, ReadApiServer};
 use sui_json_rpc::SuiRpcModule;
 use sui_json_rpc_types::{
-    Checkpoint, CheckpointId, DynamicFieldPage, MoveFunctionArgType, ObjectsPage, Page,
+    BigInt, Checkpoint, CheckpointId, DynamicFieldPage, MoveFunctionArgType, ObjectsPage, Page,
     SuiGetPastObjectRequest, SuiMoveNormalizedFunction, SuiMoveNormalizedModule,
     SuiMoveNormalizedStruct, SuiObjectDataOptions, SuiObjectResponse, SuiPastObjectResponse,
     SuiTransactionResponse, SuiTransactionResponseOptions, SuiTransactionResponseQuery,
@@ -275,14 +275,14 @@ where
             .await
     }
 
-    async fn get_total_transaction_number(&self) -> RpcResult<u64> {
+    async fn get_total_transaction_number(&self) -> RpcResult<BigInt> {
         if self
             .method_to_be_forwarded
             .contains(&"get_total_transaction_number".to_string())
         {
             return self.fullnode.get_total_transaction_number().await;
         }
-        Ok(self.get_total_transaction_number_internal()?)
+        Ok(self.get_total_transaction_number_internal()?.into())
     }
 
     async fn query_transactions(

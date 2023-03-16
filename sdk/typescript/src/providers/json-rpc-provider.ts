@@ -57,7 +57,7 @@ import {
   WebsocketClientOptions,
 } from '../rpc/websocket-client';
 import { requestSuiFromFaucet } from '../rpc/faucet-client';
-import { any, is, number, array } from 'superstruct';
+import { any, is, number, array, string } from 'superstruct';
 import { toB64 } from '@mysten/bcs';
 import { SerializedSignature } from '../cryptography/signature';
 import { Connection, devnetConnection } from '../rpc/connection';
@@ -749,15 +749,15 @@ export class JsonRpcProvider {
   /**
    * Get total number of transactions
    */
-  async getTotalTransactionNumber(): Promise<number> {
+  async getTotalTransactionNumber(): Promise<bigint> {
     try {
       const resp = await this.client.requestWithType(
         'sui_getTotalTransactionNumber',
         [],
-        number(),
+        string(),
         this.options.skipDataValidation,
       );
-      return resp;
+      return BigInt(resp);
     } catch (err) {
       throw new Error(`Error fetching total transaction number: ${err}`);
     }
