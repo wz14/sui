@@ -224,6 +224,7 @@ impl Proposer {
                 .map(|(digest, worker_id, created_at)| (*digest, (*worker_id, *created_at)))
                 .collect(),
             parents.iter().map(|x| x.digest()).collect(),
+            vec![],
         )
         .await;
 
