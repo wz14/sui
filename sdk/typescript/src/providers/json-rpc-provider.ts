@@ -899,7 +899,7 @@ export class JsonRpcProvider {
     transaction: Transaction | string | Uint8Array;
     sender: SuiAddress;
     /** Default to use the network reference gas price stored in the Sui System State object */
-    gasPrice?: number | null;
+    gasPrice?: bigint | number | null;
     /** optional. Default to use the current epoch number stored in the Sui System State object */
     epoch?: number | null;
   }): Promise<DevInspectResults> {
@@ -920,10 +920,11 @@ export class JsonRpcProvider {
       } else {
         throw new Error('Unknown transaction format.');
       }
-
+      const gas =
+        input.gasPrice === undefined ? input.gasPrice : String(input.gasPrice);
       const resp = await this.client.requestWithType(
         'sui_devInspectTransaction',
-        [input.sender, devInspectTxBytes, input.gasPrice, input.epoch],
+        [input.sender, devInspectTxBytes, gas, input.epoch],
         DevInspectResults,
         this.options.skipDataValidation,
       );
