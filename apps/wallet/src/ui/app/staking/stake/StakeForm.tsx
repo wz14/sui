@@ -6,7 +6,6 @@ import { Field, Form, useFormikContext } from 'formik';
 import { memo, useCallback, useMemo } from 'react';
 
 import { parseAmount } from '../../helpers';
-import { useTransactionGasBudget } from '../../hooks';
 import { useGetTimeBeforeEpochNumber } from '../useGetTimeBeforeEpochNumber';
 import { type FormValues } from './StakingCard';
 import { createStakeTransaction } from './utils/transaction';
@@ -15,6 +14,7 @@ import { Text } from '_app/shared/text';
 import NumberInput from '_components/number-input';
 import { NUM_OF_EPOCH_BEFORE_EARNING } from '_src/shared/constants';
 import { CountDownTimer } from '_src/ui/app/shared/countdown-timer';
+import { useTransactionGasBudget } from '../../hooks';
 
 const HIDE_MAX = true;
 

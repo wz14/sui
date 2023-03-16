@@ -7,6 +7,8 @@ import { Transaction } from "@mysten/sui.js";
 import { useEffect } from "react";
 
 const transaction = new Transaction();
+const coin = transaction.splitCoin(transaction.gas, transaction.pure(1));
+transaction.transferObjects([coin], transaction.pure("0x2"));
 transaction.moveCall({
   target: `0x2::devnet_nft::mint`,
   arguments: [
