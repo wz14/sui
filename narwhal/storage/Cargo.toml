@@ -11,6 +11,7 @@ publish = false
 tempfile = "3.3.0"
 dashmap = "5.4.0"
 fastcrypto.workspace = true
+mysten-common.workspace = true
 futures = "0.3.24"
 thiserror = "1.0.35"
 tokio = { workspace = true, features = ["sync", "rt", "macros"] }

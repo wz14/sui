@@ -5908,6 +5908,7 @@ dependencies = [
  "fail 0.5.1",
  "fastcrypto",
  "futures",
+ "mysten-common",
  "narwhal-config",
  "narwhal-crypto",
  "narwhal-test-utils",

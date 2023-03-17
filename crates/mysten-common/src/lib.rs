@@ -3,3 +3,4 @@
 
 /// Low level ultilities shared between Sui and Narwhal.
 pub mod notify_once;
+pub mod notify_read;
