@@ -2082,6 +2082,7 @@ impl PartialEq for TransactionStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HandleTransactionResponse {
     pub status: TransactionStatus,
+
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

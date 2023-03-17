@@ -200,11 +200,7 @@ impl AuthorityStorePruner {
             "Starting object pruning service with num_epochs_to_retain={}",
             config.num_epochs_to_retain
         );
-        let tick_duration = if config.num_epochs_to_retain > 0 {
-            Duration::from_millis(epoch_duration_ms / 2)
-        } else {
-            Duration::from_secs(1)
-        };
+        let tick_duration = Duration::from_secs(600);
 
         let pruning_initial_delay = min(tick_duration, Duration::from_secs(300));
         let mut prune_interval =

@@ -296,13 +296,13 @@ impl ValidatorService {
 
         let shared_object_tx = certificate.contains_shared_object();
 
-        let _metrics_guard = if shared_object_tx {
-            metrics.handle_certificate_consensus_latency.start_timer()
-        } else {
-            metrics
-                .handle_certificate_non_consensus_latency
-                .start_timer()
-        };
+        // let _metrics_guard = if shared_object_tx {
+        //     metrics.handle_certificate_consensus_latency.start_timer()
+        // } else {
+        //     metrics
+        //         .handle_certificate_non_consensus_latency
+        //         .start_timer()
+        // };
 
         // 1) Check if cert already executed
         let tx_digest = *certificate.digest();
@@ -393,6 +393,14 @@ impl ValidatorService {
             }
             drop(reconfiguration_lock);
             certificate
+        };
+
+        let _metrics_guard = if shared_object_tx {
+            metrics.handle_certificate_consensus_latency.start_timer()
+        } else {
+            metrics
+                .handle_certificate_non_consensus_latency
+                .start_timer()
         };
 
         // 4) Execute the certificate if it contains only owned object transactions, or wait for

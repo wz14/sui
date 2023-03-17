@@ -5,6 +5,8 @@ use std::{
     collections::{BTreeSet, HashMap, HashSet},
     sync::Arc,
 };
+use std::sync::Weak;
+use std::time::Instant;
 
 use parking_lot::RwLock;
 use sui_types::{
@@ -16,10 +18,9 @@ use sui_types::{base_types::TransactionDigest, error::SuiResult};
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{debug, error, warn};
 
-use crate::authority::{
-    authority_per_epoch_store::AuthorityPerEpochStore, authority_store::InputKey,
-};
+use crate::authority::{authority_per_epoch_store::AuthorityPerEpochStore, authority_store::InputKey, AuthorityState};
 use crate::authority::{AuthorityMetrics, AuthorityStore};
+use crate::execution_driver::{execute_directly, execution_process};
 
 /// TransactionManager is responsible for managing object dependencies of pending transactions,
 /// and publishing a stream of certified transactions (certificates) ready to execute.
@@ -32,16 +33,18 @@ pub struct TransactionManager {
     authority_store: Arc<AuthorityStore>,
     tx_ready_certificates: UnboundedSender<VerifiedExecutableTransaction>,
     metrics: Arc<AuthorityMetrics>,
-    inner: RwLock<Inner>,
+    pub inner: RwLock<Inner>,
 }
+
 
 struct PendingCertificate {
     certificate: VerifiedExecutableTransaction,
     missing: BTreeSet<InputKey>,
+    instant: Instant,
 }
 
 #[derive(Default)]
-struct Inner {
+pub struct Inner {
     // Current epoch of TransactionManager.
     epoch: EpochId,
 
@@ -63,12 +66,14 @@ struct Inner {
     pending_certificates: HashMap<TransactionDigest, PendingCertificate>,
     // Transactions that have all input objects available, but have not finished execution.
     executing_certificates: HashSet<TransactionDigest>,
+    pub authority_state: Weak<AuthorityState>,
 }
 
 impl Inner {
-    fn new(epoch: EpochId) -> Inner {
+    fn new(epoch: EpochId, authority_state: Weak<AuthorityState>) -> Inner {
         Inner {
             epoch,
+            authority_state,
             ..Default::default()
         }
     }
@@ -87,13 +92,18 @@ impl TransactionManager {
         let transaction_manager = TransactionManager {
             authority_store,
             metrics,
-            inner: RwLock::new(Inner::new(epoch_store.epoch())),
+            inner: RwLock::new(Inner::new(epoch_store.epoch(), Weak::new())),
             tx_ready_certificates,
         };
         transaction_manager
             .enqueue(epoch_store.all_pending_execution().unwrap(), epoch_store)
             .expect("Initialize TransactionManager with pending certificates failed.");
         transaction_manager
+    }
+
+    pub(crate) fn update_authority_state(&self, authority_state: Weak<AuthorityState>) {
+        let mut inner = self.inner.write();
+        inner.authority_state = authority_state;
     }
 
     /// Enqueues certificates / verified transactions into TransactionManager. Once all of the input objects are available
@@ -152,6 +162,7 @@ impl TransactionManager {
                             .expect("Checking object existence cannot fail!")
                     })
                     .collect(),
+                instant: Instant::now(),
             });
         }
 
@@ -217,7 +228,8 @@ impl TransactionManager {
                 // Record as an executing certificate.
                 assert!(inner.executing_certificates.insert(digest));
                 // Send to execution driver for execution.
-                self.certificate_ready(pending_cert.certificate);
+                self.metrics.tx_pending_latency.observe((Instant::now() - pending_cert.instant).as_secs_f64());
+                self.certificate_ready(pending_cert.certificate, &inner);
                 continue;
             }
 
@@ -328,9 +340,10 @@ impl TransactionManager {
                 if pending_cert.missing.is_empty() {
                     debug!(tx_digest = ?digest, "certificate ready");
                     let pending_cert = inner.pending_certificates.remove(&digest).unwrap();
+                    self.metrics.tx_pending_latency.observe((Instant::now() - pending_cert.instant).as_secs_f64());
                     assert!(inner.executing_certificates.insert(digest));
                     ready_digests.push(digest);
-                    self.certificate_ready(pending_cert.certificate);
+                    self.certificate_ready(pending_cert.certificate, &inner);
                 } else {
                     debug!(tx_digest = ?digest, missing = ?pending_cert.missing, "Certificate waiting on missing inputs");
                 }
@@ -369,9 +382,14 @@ impl TransactionManager {
     }
 
     /// Sends the ready certificate for execution.
-    fn certificate_ready(&self, certificate: VerifiedExecutableTransaction) {
+    fn certificate_ready(&self, certificate: VerifiedExecutableTransaction, inner: &Inner) {
         self.metrics.transaction_manager_num_ready.inc();
-        let _ = self.tx_ready_certificates.send(certificate);
+        let authority_state = inner.authority_state.clone();
+        if let Some(authority) = authority_state.upgrade() {
+            execute_directly(authority, certificate);
+        } else {
+            let _ = self.tx_ready_certificates.send(certificate);
+        };
     }
 
     /// Gets the missing input object keys for the given transaction.
@@ -406,6 +424,6 @@ impl TransactionManager {
     // because they are no longer relevant and may be incorrect in the new epoch.
     pub(crate) fn reconfigure(&self, new_epoch: EpochId) {
         let mut inner = self.inner.write();
-        *inner = Inner::new(new_epoch);
+        *inner = Inner::new(new_epoch, inner.authority_state.clone());
     }
 }

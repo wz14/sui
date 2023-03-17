@@ -535,9 +535,9 @@ impl MetricConf {
     pub fn with_sampling(read_interval: SamplingInterval) -> Self {
         Self {
             db_name_override: None,
-            read_sample_interval: read_interval,
-            write_sample_interval: SamplingInterval::default(),
-            iter_latency_sample_interval: SamplingInterval::default(),
+            read_sample_interval: read_interval.clone(),
+            write_sample_interval: read_interval.clone(),
+            iter_latency_sample_interval: read_interval,
             iter_bytes_sample_interval: SamplingInterval::default(),
         }
     }
@@ -1324,7 +1324,7 @@ impl<'a> DBTransaction<'a> {
             RocksDBRawIter::OptimisticTransaction(db_iter),
             db.cf.clone(),
             &db.db_metrics,
-            &db.iter_latency_sample_interval,
+            &db.iter_bytes_sample_interval,
         )
     }
 

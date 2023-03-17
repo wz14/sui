@@ -61,3 +61,6 @@ typed-store = { path = "../typed-store" }
 
 [features]
 benchmark = ["narwhal-node/benchmark"]
+
+[profile.release]
+debug = true
