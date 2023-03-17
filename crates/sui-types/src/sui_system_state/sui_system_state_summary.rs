@@ -3,6 +3,7 @@
 
 use crate::base_types::{AuthorityName, ObjectID, SuiAddress};
 use crate::committee::{Committee, CommitteeWithNetworkMetadata, NetworkMetadata};
+use crate::crypto::AuthorityPublicKeyBytes;
 use crate::multiaddr::Multiaddr;
 use fastcrypto::encoding::Base58;
 use fastcrypto::traits::ToFromBytes;
@@ -94,6 +95,8 @@ impl SuiSystemStateSummary {
                 name,
                 NetworkMetadata {
                     network_address: Multiaddr::try_from(validator.net_address.clone()).unwrap(),
+                    narwhal_primary_address: Multiaddr::try_from(validator.primary_address.clone())
+                        .unwrap(),
                 },
             );
         }
@@ -180,4 +183,11 @@ pub struct SuiValidatorSummary {
     pub exchange_rates_id: ObjectID,
     /// Number of exchange rates in the table.
     pub exchange_rates_size: u64,
+}
+
+impl SuiValidatorSummary {
+    pub fn protocol_key(&self) -> AuthorityPublicKeyBytes {
+        AuthorityPublicKeyBytes::from_bytes(&self.protocol_pubkey_bytes)
+            .expect("All data must have been verified on-chain")
+    }
 }

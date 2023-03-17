@@ -201,6 +201,20 @@ impl NodeConfig {
         &self.network_address
     }
 
+    pub fn p2p_address(&self) -> Option<&Multiaddr> {
+        self.p2p_config.external_address.as_ref()
+    }
+
+    pub fn narwhal_primary_address(&self) -> Option<&Multiaddr> {
+        self.consensus_config.as_ref().map(|c| &c.address)
+    }
+
+    pub fn narwhal_worker_address(&self) -> Option<&Multiaddr> {
+        self.consensus_config
+            .as_ref()
+            .and_then(|c| c.internal_worker_address.as_ref())
+    }
+
     pub fn consensus_config(&self) -> Option<&ConsensusConfig> {
         self.consensus_config.as_ref()
     }

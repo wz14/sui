@@ -90,6 +90,10 @@ impl Multiaddr {
         }
         Self(new_address)
     }
+
+    pub fn to_vec(&self) -> Vec<u8> {
+        self.0.to_vec()
+    }
 }
 
 impl std::fmt::Display for Multiaddr {

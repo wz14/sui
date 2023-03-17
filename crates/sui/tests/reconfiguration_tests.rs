@@ -18,7 +18,7 @@ use sui_core::test_utils::make_transfer_sui_transaction;
 use sui_framework::{SuiFramework, SystemPackage};
 use sui_macros::sim_test;
 use sui_node::SuiNodeHandle;
-use sui_types::base_types::{ObjectRef, SuiAddress};
+use sui_types::base_types::{AuthorityName, ObjectRef, SuiAddress};
 use sui_types::crypto::{
     generate_proof_of_possession, get_account_key_pair, get_key_pair_from_rng, AccountKeyPair,
     KeypairTraits, ToFromBytes,
@@ -31,6 +31,8 @@ use sui_types::messages::{
     VerifiedTransaction,
 };
 use sui_types::object::{generate_test_gas_objects_with_owner, Object};
+use sui_types::sui_system_state::sui_system_state_inner_v1::VerifiedValidatorMetadataV1;
+use sui_types::sui_system_state::sui_system_state_summary::SuiValidatorSummary;
 use sui_types::sui_system_state::{get_validator_from_table, SuiSystemStateTrait};
 use sui_types::utils::to_sender_signed_transaction;
 use sui_types::{SUI_SYSTEM_STATE_OBJECT_ID, SUI_SYSTEM_STATE_OBJECT_SHARED_VERSION};
@@ -584,23 +586,31 @@ async fn test_reconfig_with_committee_change_basic() {
     // The order of validator_set() and validator_configs() is also different.
     // TODO: We should really fix the above inconveniences.
     let public_keys: HashSet<_> = init_configs
-        .validator_set()
+        .validator_configs
         .iter()
-        .map(|v| v.protocol_key())
+        .map(|config| config.protocol_public_key())
         .collect();
-    let new_validator = new_configs
-        .validator_set()
-        .into_iter()
-        .find(|v| !public_keys.contains(&v.protocol_key()))
-        .unwrap();
+    // Node configs contain things such as private keys, which we need to send transactions.
     let new_node_config = new_configs
-        .validator_configs()
+        .validator_configs
         .iter()
         .find(|v| !public_keys.contains(&v.protocol_public_key()))
         .unwrap();
+    // Validator summary contains some public network addresses that we need to commit on-chain.
+    let new_validator = new_configs
+        .genesis_system_state()
+        .validators
+        .active_validators
+        .iter()
+        .find(|v| {
+            let name: AuthorityName = v.verified_metadata().sui_pubkey_bytes();
+            !public_keys.contains(&name)
+        })
+        .unwrap()
+        .verified_metadata();
     info!(
         "New validator is: {:?}",
-        new_validator.protocol_key.concise()
+        new_validator.sui_pubkey_bytes().concise()
     );
 
     let mut authorities = spawn_test_authorities(&init_configs).await;
@@ -613,8 +623,8 @@ async fn test_reconfig_with_committee_change_basic() {
             .map(|obj| obj.compute_object_reference())
             .collect::<Vec<_>>(),
         stake.compute_object_reference(),
-        &new_validator,
         new_node_config,
+        new_validator,
     )
     .await;
 
@@ -933,15 +943,11 @@ async fn execute_join_committee_txes(
     authorities: &[SuiNodeHandle],
     gas_objects: Vec<ObjectRef>,
     stake: ObjectRef,
-    val: &ValidatorInfo,
     node_config: &NodeConfig,
+    val: &VerifiedValidatorMetadataV1,
 ) -> Vec<CertifiedTransactionEffects> {
     let mut effects_ret = vec![];
-    let sender = node_config.sui_address();
-    assert_eq!(
-        node_config.protocol_public_key().as_bytes(),
-        val.protocol_key().as_bytes()
-    );
+    let sender = val.sui_address;
     let proof_of_possession = generate_proof_of_possession(node_config.protocol_key_pair(), sender);
 
     // Step 1: Add the new node as a validator candidate.
@@ -958,18 +964,18 @@ async fn execute_join_committee_txes(
                 initial_shared_version: SUI_SYSTEM_STATE_OBJECT_SHARED_VERSION,
                 mutable: true,
             }),
-            CallArg::Pure(bcs::to_bytes(&val.protocol_key().as_bytes().to_vec()).unwrap()),
-            CallArg::Pure(bcs::to_bytes(val.network_key().as_bytes()).unwrap()),
-            CallArg::Pure(bcs::to_bytes(val.worker_key().as_bytes()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(val.protocol_pubkey.as_bytes()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(val.network_pubkey.as_bytes()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(val.worker_pubkey.as_bytes()).unwrap()),
             CallArg::Pure(bcs::to_bytes(proof_of_possession.as_ref()).unwrap()),
-            CallArg::Pure(bcs::to_bytes(val.name().as_bytes()).unwrap()),
-            CallArg::Pure(bcs::to_bytes("description".as_bytes()).unwrap()),
-            CallArg::Pure(bcs::to_bytes("image_url".as_bytes()).unwrap()),
-            CallArg::Pure(bcs::to_bytes("project_url".as_bytes()).unwrap()),
-            CallArg::Pure(bcs::to_bytes(&val.network_address()).unwrap()),
-            CallArg::Pure(bcs::to_bytes(&val.p2p_address()).unwrap()),
-            CallArg::Pure(bcs::to_bytes(&val.narwhal_primary_address()).unwrap()),
-            CallArg::Pure(bcs::to_bytes(&val.narwhal_worker_address()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(val.name.as_bytes()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(val.description.as_bytes()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(val.image_url.as_bytes()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(val.project_url.as_bytes()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(&val.net_address.to_vec()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(&val.p2p_address.to_vec()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(&val.primary_address.to_vec()).unwrap()),
+            CallArg::Pure(bcs::to_bytes(&val.worker_address.to_vec()).unwrap()),
             CallArg::Pure(bcs::to_bytes(&1u64).unwrap()), // gas_price
             CallArg::Pure(bcs::to_bytes(&0u64).unwrap()), // commission_rate
         ],
