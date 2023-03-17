@@ -205,7 +205,7 @@ export const getDataOnTxDigests = (
                     return {
                         txId: digest,
                         status: getExecutionStatusType(txEff)!,
-                        txGas: getTotalGasUsed(txEff),
+                        txGas: Number(getTotalGasUsed(txEff)),
                         suiAmount,
                         coinType: transfer?.coinType || null,
                         kind: txKind,
