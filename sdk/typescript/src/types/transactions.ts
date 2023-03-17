@@ -33,8 +33,7 @@ import {
   TransactionEventDigest,
 } from './common';
 
-// TODO: support u64
-export const EpochId = number();
+export const EpochId = string();
 
 export const SuiChangeEpoch = object({
   epoch: EpochId,

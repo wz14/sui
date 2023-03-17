@@ -108,9 +108,9 @@ impl GovernanceReadApi {
                 };
                 delegations.push(Stake {
                     staked_sui_id: stake.id(),
-                    stake_request_epoch: stake.request_epoch(),
+                    stake_request_epoch: stake.request_epoch().into(),
                     // TODO: this might change when we implement warm up period.
-                    stake_active_epoch: stake.request_epoch() + 1,
+                    stake_active_epoch: (stake.request_epoch() + 1).into(),
                     principal: stake.principal(),
                     status,
                 })
