@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 use crypto::{traits::InsecureDefault, PublicKey, PublicKeyBytes};
 use fastcrypto::hash::Hash;
+use mysten_common::notify_read::NotifyRead;
+use std::sync::Arc;
 use std::{cmp::Ordering, collections::BTreeMap, iter};
-
-use crate::NotifySubscribers;
 use store::{
     rocks::{DBMap, TypedStoreError::RocksDBError},
     Map,
@@ -33,7 +33,7 @@ pub struct CertificateStore {
     /// certificate here to not waste space. To dereference we use the certificates_by_id storage.
     certificate_id_by_origin: DBMap<(PublicKeyBytes, Round), CertificateDigest>,
     /// The pub/sub to notify for a write that happened for a certificate digest id
-    notify_subscribers: NotifySubscribers<CertificateDigest, Certificate>,
+    notify_subscribers: Arc<NotifyRead<CertificateDigest, Certificate>>,
 }
 
 impl CertificateStore {
@@ -46,7 +46,7 @@ impl CertificateStore {
             certificates_by_id,
             certificate_id_by_round,
             certificate_id_by_origin,
-            notify_subscribers: NotifySubscribers::new(),
+            notify_subscribers: Arc::new(NotifyRead::new()),
         }
     }
 
@@ -213,22 +213,17 @@ impl CertificateStore {
     /// Waits to get notified until the requested certificate becomes available
     pub async fn notify_read(&self, id: CertificateDigest) -> StoreResult<Certificate> {
         // we register our interest to be notified with the value
-        let receiver = self.notify_subscribers.subscribe(&id);
+        let registration = self.notify_subscribers.register_one(&id);
 
         // let's read the value because we might have missed the opportunity
         // to get notified about it
         if let Ok(Some(cert)) = self.read(id) {
-            // notify any obligations - and remove the entries
-            self.notify_subscribers.notify(&id, &cert);
-
             // reply directly
             return Ok(cert);
         }
 
         // now wait to hear back the result
-        let result = receiver
-            .await
-            .expect("Irrecoverable error while waiting to receive the notify_read result");
+        let result = registration.await;
 
         Ok(result)
     }
@@ -811,6 +806,8 @@ mod test {
             // clear the store before next run
             store.clear().unwrap();
         }
+
+        assert_eq!(store.notify_subscribers.num_pending(), 0);
     }
 
     #[tokio::test]
