@@ -57,7 +57,7 @@ import {
   WebsocketClientOptions,
 } from '../rpc/websocket-client';
 import { requestSuiFromFaucet } from '../rpc/faucet-client';
-import { any, is, number, array, string } from 'superstruct';
+import { any, is, array, string } from 'superstruct';
 import { toB64 } from '@mysten/bcs';
 import { SerializedSignature } from '../cryptography/signature';
 import { Connection, devnetConnection } from '../rpc/connection';
@@ -1018,15 +1018,15 @@ export class JsonRpcProvider {
   /**
    * Get the sequence number of the latest checkpoint that has been executed
    */
-  async getLatestCheckpointSequenceNumber(): Promise<number> {
+  async getLatestCheckpointSequenceNumber(): Promise<bigint> {
     try {
       const resp = await this.client.requestWithType(
         'sui_getLatestCheckpointSequenceNumber',
         [],
-        number(),
+        string(),
         this.options.skipDataValidation,
       );
-      return resp;
+      return BigInt(resp);
     } catch (err) {
       throw new Error(
         `Error fetching latest checkpoint sequence number: ${err}`,

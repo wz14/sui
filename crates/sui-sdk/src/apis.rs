@@ -191,7 +191,8 @@ impl ReadApi {
             .api
             .http
             .get_latest_checkpoint_sequence_number()
-            .await?)
+            .await?
+            .into())
     }
 
     pub fn get_transactions_stream(

@@ -13,6 +13,10 @@ use sui_types::messages_checkpoint::{
     CheckpointTimestamp, EndOfEpochData,
 };
 
+use crate::BigInt;
+
+pub type SuiCheckpointSequenceNumber = BigInt;
+
 #[derive(Clone, Debug, JsonSchema, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Checkpoint {

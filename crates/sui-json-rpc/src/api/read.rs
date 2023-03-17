@@ -6,17 +6,16 @@ use jsonrpsee_proc_macros::rpc;
 use std::collections::BTreeMap;
 use sui_json_rpc_types::{
     BigInt, Checkpoint, CheckpointId, DynamicFieldPage, MoveFunctionArgType, ObjectsPage,
-    SuiGetPastObjectRequest, SuiMoveNormalizedFunction, SuiMoveNormalizedModule,
-    SuiMoveNormalizedStruct, SuiObjectDataOptions, SuiObjectResponse, SuiPastObjectResponse,
-    SuiTransactionResponse, SuiTransactionResponseOptions, SuiTransactionResponseQuery,
-    TransactionsPage,
+    SuiCheckpointSequenceNumber, SuiGetPastObjectRequest, SuiMoveNormalizedFunction,
+    SuiMoveNormalizedModule, SuiMoveNormalizedStruct, SuiObjectDataOptions, SuiObjectResponse,
+    SuiPastObjectResponse, SuiTransactionResponse, SuiTransactionResponseOptions,
+    SuiTransactionResponseQuery, TransactionsPage,
 };
 use sui_open_rpc_macros::open_rpc;
 use sui_types::base_types::{
     ObjectID, SequenceNumber, SuiAddress, TransactionDigest, TxSequenceNumber,
 };
 use sui_types::dynamic_field::DynamicFieldName;
-use sui_types::messages_checkpoint::CheckpointSequenceNumber;
 
 #[open_rpc(namespace = "sui", tag = "Read API")]
 #[rpc(server, client, namespace = "sui")]
@@ -203,7 +202,8 @@ pub trait ReadApi {
 
     /// Return the sequence number of the latest checkpoint that has been executed
     #[method(name = "getLatestCheckpointSequenceNumber")]
-    async fn get_latest_checkpoint_sequence_number(&self) -> RpcResult<CheckpointSequenceNumber>;
+    async fn get_latest_checkpoint_sequence_number(&self)
+        -> RpcResult<SuiCheckpointSequenceNumber>;
 
     /// Return a checkpoint
     #[method(name = "getCheckpoint")]

@@ -12,16 +12,15 @@ use sui_json_rpc::api::{cap_page_limit, ReadApiClient, ReadApiServer};
 use sui_json_rpc::SuiRpcModule;
 use sui_json_rpc_types::{
     BigInt, Checkpoint, CheckpointId, DynamicFieldPage, MoveFunctionArgType, ObjectsPage, Page,
-    SuiGetPastObjectRequest, SuiMoveNormalizedFunction, SuiMoveNormalizedModule,
-    SuiMoveNormalizedStruct, SuiObjectDataOptions, SuiObjectResponse, SuiPastObjectResponse,
-    SuiTransactionResponse, SuiTransactionResponseOptions, SuiTransactionResponseQuery,
-    TransactionsPage,
+    SuiCheckpointSequenceNumber, SuiGetPastObjectRequest, SuiMoveNormalizedFunction,
+    SuiMoveNormalizedModule, SuiMoveNormalizedStruct, SuiObjectDataOptions, SuiObjectResponse,
+    SuiPastObjectResponse, SuiTransactionResponse, SuiTransactionResponseOptions,
+    SuiTransactionResponseQuery, TransactionsPage,
 };
 use sui_open_rpc::Module;
 use sui_types::base_types::{ObjectID, SequenceNumber, SuiAddress, TxSequenceNumber};
 use sui_types::digests::TransactionDigest;
 use sui_types::dynamic_field::DynamicFieldName;
-use sui_types::messages_checkpoint::CheckpointSequenceNumber;
 use sui_types::query::TransactionFilter;
 
 pub(crate) struct ReadApi<S> {
@@ -421,14 +420,18 @@ where
             .await
     }
 
-    async fn get_latest_checkpoint_sequence_number(&self) -> RpcResult<CheckpointSequenceNumber> {
+    async fn get_latest_checkpoint_sequence_number(
+        &self,
+    ) -> RpcResult<SuiCheckpointSequenceNumber> {
         if self
             .method_to_be_forwarded
             .contains(&"get_latest_checkpoint_sequence_number".to_string())
         {
             return self.fullnode.get_latest_checkpoint_sequence_number().await;
         }
-        Ok(self.get_latest_checkpoint_sequence_number_internal()?)
+        Ok(self
+            .get_latest_checkpoint_sequence_number_internal()?
+            .into())
     }
 
     async fn get_checkpoint(&self, id: CheckpointId) -> RpcResult<Checkpoint> {
