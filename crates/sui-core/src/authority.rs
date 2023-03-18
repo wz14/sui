@@ -24,7 +24,7 @@ use prometheus::{
 };
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use tap::TapFallible;
+use tap::{TapFallible, TapOptional};
 use tokio::sync::mpsc::unbounded_channel;
 use tokio::sync::oneshot;
 use tokio_retry::strategy::{jitter, ExponentialBackoff};
@@ -44,10 +44,10 @@ use sui_config::genesis::Genesis;
 use sui_config::node::{AuthorityStorePruningConfig, DBCheckpointConfig};
 use sui_json_rpc_types::{
     DevInspectResults, DryRunTransactionResponse, EventFilter, SuiEvent, SuiMoveValue,
-    SuiTransactionEvents,
+    SuiObjectDataFilter, SuiTransactionEvents,
 };
-use sui_macros::{fail_point, nondeterministic};
-use sui_protocol_config::{ProtocolConfig, SupportedProtocolVersions};
+use sui_macros::{fail_point, fail_point_async, nondeterministic};
+use sui_protocol_config::SupportedProtocolVersions;
 use sui_storage::indexes::{ObjectIndexChanges, MAX_GET_OWNED_OBJECT_SIZE};
 use sui_storage::write_ahead_log::WriteAheadLog;
 use sui_storage::{
@@ -102,7 +102,7 @@ use crate::checkpoints::CheckpointStore;
 use crate::epoch::committee_store::CommitteeStore;
 use crate::epoch::epoch_metrics::EpochMetrics;
 use crate::event_handler::EventHandler;
-use crate::execution_driver::execution_process;
+use crate::execution_driver::{execution_process, EXECUTION_MAX_ATTEMPTS};
 use crate::module_cache_metrics::ResolverMetrics;
 use crate::stake_aggregator::StakeAggregator;
 use crate::{transaction_input_checker, transaction_manager::TransactionManager};
@@ -137,8 +137,6 @@ pub mod epoch_start_configuration;
 
 pub(crate) mod authority_notify_read;
 pub(crate) mod authority_store;
-
-pub(crate) const MAX_TX_RECOVERY_RETRY: u32 = 3;
 
 // Reject a transaction if the number of certificates pending execution is above this threshold.
 // 20000 = 10k TPS * 2s resident time in transaction manager.
@@ -1585,8 +1583,7 @@ impl AuthorityState {
             sui_simulator::task::shutdown_current_node();
         }
     }
-    // TODO: This function takes both committee and genesis as parameter.
-    // Technically genesis already contains committee information. Could consider merging them.
+
     #[allow(clippy::disallowed_methods)] // allow unbounded_channel()
     pub async fn new(
         name: AuthorityName,
@@ -1643,7 +1640,7 @@ impl AuthorityState {
         // Process tx recovery log first, so that checkpoint recovery (below)
         // doesn't observe partially-committed txes.
         state
-            .process_tx_recovery_log(None, &epoch_store)
+            .process_tx_recovery_log(&epoch_store)
             .await
             .expect("Could not fully process recovery log at startup!");
 
@@ -1765,41 +1762,26 @@ impl AuthorityState {
     // Continually pop in-progress txes from the WAL and try to drive them to completion.
     pub async fn process_tx_recovery_log(
         &self,
-        limit: Option<usize>,
         epoch_store: &Arc<AuthorityPerEpochStore>,
     ) -> SuiResult {
-        let mut limit = limit.unwrap_or(usize::MAX);
-        while limit > 0 {
-            limit -= 1;
-            if let Some((cert, tx_guard)) = epoch_store.wal().read_one_recoverable_tx().await? {
-                let digest = tx_guard.tx_id();
-                debug!(?digest, "replaying failed cert from log");
+        while let Some((cert, tx_guard)) = epoch_store.wal().read_one_recoverable_tx().await? {
+            let digest = tx_guard.tx_id();
+            debug!(?digest, "replaying failed cert from log");
 
-                if tx_guard.retry_num() >= MAX_TX_RECOVERY_RETRY {
-                    // This tx will be only partially executed, however the store will be in a safe
-                    // state. We will simply never reach eventual consistency for this TX.
-                    // TODO: Should we revert the tx entirely? I'm not sure the effort is
-                    // warranted, since the only way this can happen is if we are repeatedly
-                    // failing to write to the db, in which case a revert probably won't succeed
-                    // either.
-                    error!(
-                        ?digest,
-                        "Abandoning in-progress TX after {} retries.", MAX_TX_RECOVERY_RETRY
-                    );
-                    // prevent the tx from going back into the recovery list again.
-                    tx_guard.release();
-                    continue;
-                }
+            if tx_guard.retry_num() >= EXECUTION_MAX_ATTEMPTS {
+                // All in-progress transactions must eventually succeed.
+                panic!(
+                    "Transaction {:?} still failing after {} retries",
+                    digest, EXECUTION_MAX_ATTEMPTS
+                );
+            }
 
-                if let Err(e) = self
-                    .process_certificate(tx_guard, &cert.into(), epoch_store)
-                    .instrument(error_span!("process_tx_recovery_log", tx_digest = ?digest))
-                    .await
-                {
-                    warn!(?digest, "Failed to process in-progress certificate: {e}");
-                }
-            } else {
-                break;
+            if let Err(e) = self
+                .process_certificate(tx_guard, &cert.into(), epoch_store)
+                .instrument(error_span!("process_tx_recovery_log", tx_digest = ?digest))
+                .await
+            {
+                warn!(?digest, "Failed to process in-progress certificate: {e}");
             }
         }
 
@@ -2169,9 +2151,10 @@ impl AuthorityState {
         owner: SuiAddress,
         cursor: Option<ObjectID>,
         limit: usize,
+        filter: Option<SuiObjectDataFilter>,
     ) -> SuiResult<Vec<ObjectInfo>> {
         if let Some(indexes) = &self.indexes {
-            indexes.get_owner_objects(owner, cursor, limit)
+            indexes.get_owner_objects(owner, cursor, limit, filter)
         } else {
             Err(SuiError::IndexStoreNotAvailable)
         }
@@ -2180,9 +2163,15 @@ impl AuthorityState {
     pub fn get_owner_objects_iterator(
         &self,
         owner: SuiAddress,
+        cursor: Option<ObjectID>,
+        limit: Option<usize>,
+        filter: Option<SuiObjectDataFilter>,
     ) -> SuiResult<impl Iterator<Item = ObjectInfo> + '_> {
+        let cursor_u = cursor.unwrap_or(ObjectID::ZERO);
+        let count = limit.unwrap_or(MAX_GET_OWNED_OBJECT_SIZE);
+
         if let Some(indexes) = &self.indexes {
-            indexes.get_owner_objects_iterator(owner, ObjectID::ZERO, MAX_GET_OWNED_OBJECT_SIZE)
+            indexes.get_owner_objects_iterator(owner, cursor_u, count, filter)
         } else {
             Err(SuiError::IndexStoreNotAvailable)
         }
@@ -2197,7 +2186,7 @@ impl AuthorityState {
         T: DeserializeOwned,
     {
         let object_ids = self
-            .get_owner_objects_iterator(owner)?
+            .get_owner_objects_iterator(owner, None, None, None)?
             .filter(|o| match &o.type_ {
                 ObjectType::Struct(s) => type_.matches_type_fuzzy_generics(s),
                 ObjectType::Package => false,
@@ -2710,10 +2699,11 @@ impl AuthorityState {
             .acquire_transaction_locks(epoch_store.epoch(), owned_input_objects, tx_digest)
             .await?;
 
-        // TODO: we should have transaction insertion be atomic with lock acquisition, or retry.
-        // For now write transactions after because if we write before, there is a chance the lock can fail
+        // Write transactions after because if we write before, there is a chance the lock can fail
         // and this can cause invalid transactions to be inserted in the table.
-        // https://github.com/MystenLabs/sui/issues/1990
+        // It is also safe being non-atomic with above, because if we crash before writing the
+        // transaction, we will just come back, re-acquire the same lock and write the transaction
+        // again.
         epoch_store.insert_signed_transaction(transaction)?;
 
         Ok(())
@@ -2823,12 +2813,6 @@ impl AuthorityState {
         Ok(tx_option)
     }
 
-    pub async fn parent(&self, object_ref: &ObjectRef) -> Option<TransactionDigest> {
-        self.database
-            .parent(object_ref)
-            .expect("TODO: propagate the error")
-    }
-
     pub async fn get_objects(
         &self,
         _objects: &[ObjectID],
@@ -2853,6 +2837,47 @@ impl AuthorityState {
         object_id: ObjectID,
     ) -> Result<Option<(ObjectRef, TransactionDigest)>, SuiError> {
         self.database.get_latest_parent_entry(object_id)
+    }
+
+    /// Ordinarily, protocol upgrades occur when 2f + 1 + (f *
+    /// ProtocolConfig::buffer_stake_for_protocol_upgrade_bps) vote for the upgrade.
+    ///
+    /// This method can be used to dynamic adjust the amount of buffer. If set to 0, the upgrade
+    /// will go through with only 2f+1 votes.
+    ///
+    /// IMPORTANT: If this is used, it must be used on >=2f+1 validators (all should have the same
+    /// value), or you risk halting the chain.
+    pub fn set_override_protocol_upgrade_buffer_stake(
+        &self,
+        expected_epoch: EpochId,
+        buffer_stake_bps: u64,
+    ) -> SuiResult {
+        let epoch_store = self.load_epoch_store_one_call_per_task();
+        let actual_epoch = epoch_store.epoch();
+        if actual_epoch != expected_epoch {
+            return Err(SuiError::WrongEpoch {
+                expected_epoch,
+                actual_epoch,
+            });
+        }
+
+        epoch_store.set_override_protocol_upgrade_buffer_stake(buffer_stake_bps)
+    }
+
+    pub fn clear_override_protocol_upgrade_buffer_stake(
+        &self,
+        expected_epoch: EpochId,
+    ) -> SuiResult {
+        let epoch_store = self.load_epoch_store_one_call_per_task();
+        let actual_epoch = epoch_store.epoch();
+        if actual_epoch != expected_epoch {
+            return Err(SuiError::WrongEpoch {
+                expected_epoch,
+                actual_epoch,
+            });
+        }
+
+        epoch_store.clear_override_protocol_upgrade_buffer_stake()
     }
 
     /// Get the set of system packages that are compiled in to this build, if those packages are
@@ -3024,10 +3049,15 @@ impl AuthorityState {
     fn choose_protocol_version_and_system_packages(
         current_protocol_version: ProtocolVersion,
         committee: &Committee,
-        protocol_config: &ProtocolConfig,
         capabilities: Vec<AuthorityCapabilities>,
+        mut buffer_stake_bps: u64,
     ) -> (ProtocolVersion, Vec<ObjectRef>) {
         let next_protocol_version = current_protocol_version + 1;
+
+        if buffer_stake_bps > 10000 {
+            warn!("clamping buffer_stake_bps to 10000");
+            buffer_stake_bps = 10000;
+        }
 
         // For each validator, gather the protocol version and system packages that it would like
         // to upgrade to in the next epoch.
@@ -3077,15 +3107,15 @@ impl AuthorityState {
                 let total_votes = stake_aggregator.total_votes();
                 let quorum_threshold = committee.quorum_threshold();
                 let f = committee.total_votes - committee.quorum_threshold();
-                let buffer_bps = protocol_config.buffer_stake_for_protocol_upgrade_bps();
-                // multiple by buffer_bps / 10000, rounded up.
-                let buffer_stake = (f * buffer_bps + 9999) / 10000;
+
+                // multiple by buffer_stake_bps / 10000, rounded up.
+                let buffer_stake = (f * buffer_stake_bps + 9999) / 10000;
                 let effective_threshold = quorum_threshold + buffer_stake;
 
                 info!(
                     ?total_votes,
                     ?quorum_threshold,
-                    ?buffer_bps,
+                    ?buffer_stake_bps,
                     ?effective_threshold,
                     ?next_protocol_version,
                     ?packages,
@@ -3118,12 +3148,21 @@ impl AuthorityState {
     ) -> anyhow::Result<(SuiSystemState, TransactionEffects)> {
         let next_epoch = epoch_store.epoch() + 1;
 
+        let buffer_stake_bps = epoch_store
+            .get_override_protocol_upgrade_buffer_stake()
+            .tap_some(|b| warn!("using overrided buffer stake value of {}", b))
+            .unwrap_or_else(|| {
+                epoch_store
+                    .protocol_config()
+                    .buffer_stake_for_protocol_upgrade_bps()
+            });
+
         let (next_epoch_protocol_version, next_epoch_system_packages) =
             Self::choose_protocol_version_and_system_packages(
                 epoch_store.protocol_version(),
                 epoch_store.committee(),
-                epoch_store.protocol_config(),
                 epoch_store.get_capabilities(),
+                buffer_stake_bps,
             );
 
         let Some(next_epoch_system_package_bytes) = self.get_system_package_bytes(
@@ -3174,7 +3213,21 @@ impl AuthorityState {
             "Creating advance epoch transaction"
         );
 
+        fail_point_async!("change_epoch_tx_delay");
         let _tx_lock = epoch_store.acquire_tx_lock(tx_digest).await;
+
+        // The tx could have been executed by state sync already - if so simply return an error.
+        // The checkpoint builder will shortly be terminated by reconfiguration anyway.
+        if self
+            .database
+            .is_tx_already_executed(tx_digest)
+            .expect("read cannot fail")
+        {
+            warn!("change epoch tx has already been executed via state sync");
+            return Err(anyhow::anyhow!(
+                "change epoch tx has already been executed via state sync"
+            ));
+        }
 
         let execution_guard = self
             .database
@@ -3201,7 +3254,7 @@ impl AuthorityState {
             "Effects summary of the change epoch transaction: {:?}",
             effects.summary_for_debug()
         );
-        epoch_store.record_is_safe_mode_metric(system_obj.safe_mode());
+        epoch_store.record_checkpoint_builder_is_safe_mode_metric(system_obj.safe_mode());
         // The change epoch transaction cannot fail to execute.
         assert!(effects.status().is_ok());
         Ok((system_obj, effects))

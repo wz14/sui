@@ -8,8 +8,8 @@ use sui_json_rpc_types::{
     BigInt, Checkpoint, CheckpointId, DynamicFieldPage, MoveFunctionArgType, ObjectsPage,
     SuiCheckpointSequenceNumber, SuiGetPastObjectRequest, SuiMoveNormalizedFunction,
     SuiMoveNormalizedModule, SuiMoveNormalizedStruct, SuiObjectDataOptions, SuiObjectResponse,
-    SuiPastObjectResponse, SuiTransactionResponse, SuiTransactionResponseOptions,
-    SuiTransactionResponseQuery, TransactionsPage,
+    SuiObjectResponseQuery, SuiPastObjectResponse, SuiTransactionResponse,
+    SuiTransactionResponseOptions, SuiTransactionResponseQuery, TransactionsPage,
 };
 use sui_open_rpc_macros::open_rpc;
 use sui_types::base_types::{
@@ -26,8 +26,8 @@ pub trait ReadApi {
         &self,
         /// the owner's Sui address
         address: SuiAddress,
-        /// options for specifying the content to be returned
-        options: Option<SuiObjectDataOptions>,
+        /// the objects query criteria.
+        query: Option<SuiObjectResponseQuery>,
         /// Optional paging cursor
         cursor: Option<ObjectID>,
         /// Max number of items returned per page, default to [MAX_GET_OWNED_OBJECT_SIZE] if not specified.

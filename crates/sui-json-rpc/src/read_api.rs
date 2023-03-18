@@ -26,7 +26,7 @@ use sui_json_rpc_types::{
     ObjectChange, ObjectValueKind, ObjectsPage, Page, SuiCheckpointSequenceNumber,
     SuiGetPastObjectRequest, SuiMoveNormalizedFunction, SuiMoveNormalizedModule,
     SuiMoveNormalizedStruct, SuiMoveStruct, SuiMoveValue, SuiObjectDataOptions, SuiObjectResponse,
-    SuiPastObjectResponse, SuiTransactionEvents, SuiTransactionResponse,
+    SuiObjectResponseQuery, SuiPastObjectResponse, SuiTransactionEvents, SuiTransactionResponse,
     SuiTransactionResponseOptions, SuiTransactionResponseQuery, TransactionsPage,
 };
 use sui_open_rpc::Module;
@@ -118,22 +118,27 @@ impl ReadApiServer for ReadApi {
         &self,
         address: SuiAddress,
         // exclusive cursor if `Some`, otherwise start from the beginning
-        options: Option<SuiObjectDataOptions>,
+        query: Option<SuiObjectResponseQuery>,
         cursor: Option<ObjectID>,
         limit: Option<usize>,
         at_checkpoint: Option<CheckpointId>,
     ) -> RpcResult<ObjectsPage> {
         if at_checkpoint.is_some() {
-            return Err(anyhow!("at_checkpoint param currently not supported").into());
+            return Err(anyhow!(UserInputError::Unsupported(
+                "at_checkpoint param currently not supported".to_string()
+            ))
+            .into());
         }
         let limit = cap_page_objects_limit(limit)?;
+        let SuiObjectResponseQuery { filter, options } = query.unwrap_or_default();
         let options = options.unwrap_or_default();
 
-        // MUSTFIXD(jian): multi-get-object for content/storage rebate if opt.show_content is true
         let mut objects = self
             .state
-            .get_owner_objects(address, cursor, limit + 1)
+            .get_owner_objects(address, cursor, limit + 1, filter)
             .map_err(|e| anyhow!("{e}"))?;
+
+        // MUSTFIX(jian): multi-get-object for content/storage rebate if opt.show_content is true
 
         // objects here are of size (limit + 1), where the last one is the cursor for the next page
         let has_next_page = objects.len() > limit;
