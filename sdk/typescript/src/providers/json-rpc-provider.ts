@@ -996,7 +996,7 @@ export class JsonRpcProvider {
   /**
    * Get the sequence number of the latest checkpoint that has been executed
    */
-  async getLatestCheckpointSequenceNumber(): Promise<bigint> {
+  async getLatestCheckpointSequenceNumber(): Promise<string> {
     try {
       const resp = await this.client.requestWithType(
         'sui_getLatestCheckpointSequenceNumber',
@@ -1004,7 +1004,7 @@ export class JsonRpcProvider {
         string(),
         this.options.skipDataValidation,
       );
-      return BigInt(resp);
+      return String(resp);
     } catch (err) {
       throw new Error(
         `Error fetching latest checkpoint sequence number: ${err}`,
