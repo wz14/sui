@@ -1018,7 +1018,7 @@ export class JsonRpcProvider {
    */
   async getCheckpoint(input: {
     /** The checkpoint digest or sequence number */
-    id: CheckpointDigest | number;
+    id: CheckpointDigest | string;
   }): Promise<Checkpoint> {
     try {
       const resp = await this.client.requestWithType(
@@ -1043,7 +1043,7 @@ export class JsonRpcProvider {
      * An optional paging cursor. If provided, the query will start from the next item after the specified cursor.
      * Default to start from the first item if not specified.
      */
-    cursor?: number;
+    cursor?: string;
     /** Maximum item returned per page, default to 100 if not specified. */
     limit?: number;
     /** query result ordering, default to false (ascending order), oldest record first */

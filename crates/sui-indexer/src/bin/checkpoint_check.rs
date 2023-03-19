@@ -23,9 +23,9 @@ async fn main() -> Result<()> {
     let num = rand::thread_rng().gen_range(10..100);
 
     let target_checkpoint = if latest_checkpoint - num > 0 {
-        latest_checkpoint - num
+        (latest_checkpoint - num).into()
     } else {
-        1
+        1.into()
     };
 
     let fn_checkpoint = fn_rpc_client

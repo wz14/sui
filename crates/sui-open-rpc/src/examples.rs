@@ -282,7 +282,7 @@ impl RpcExampleProvider {
     fn get_checkpoint_example(&mut self) -> Examples {
         let result = Checkpoint {
             epoch: 5000,
-            sequence_number: 1000,
+            sequence_number: 1000.into(),
             digest: CheckpointDigest::new(self.rng.gen()),
             network_total_transactions: 792385,
             previous_digest: Some(CheckpointDigest::new(self.rng.gen())),
@@ -297,7 +297,7 @@ impl RpcExampleProvider {
             "sui_getCheckpoint",
             vec![ExamplePairing::new(
                 "Get checkpoint",
-                vec![("id", json!(CheckpointId::SequenceNumber(1000)))],
+                vec![("id", json!(CheckpointId::SequenceNumber(1000.into())))],
                 json!(result),
             )],
         )
