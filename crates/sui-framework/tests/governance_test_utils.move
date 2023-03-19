@@ -22,10 +22,10 @@ module sui::governance_test_utils {
     ): Validator {
         let validator = validator::new_for_testing(
             addr,
-            x"FF",
-            x"FF",
-            x"FF",
-            x"FF",
+            x"AA",
+            x"BB",
+            x"CC",
+            x"DD",
             b"ValidatorName",
             b"description",
             b"image_url",
