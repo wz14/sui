@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use anyhow::Result;
-use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use multiaddr::Multiaddr;
 use mysten_metrics::spawn_monitored_task;
@@ -12,7 +11,6 @@ use prometheus::{
     register_histogram_with_registry, register_int_counter_with_registry, Histogram, IntCounter,
     Registry,
 };
-use std::collections::HashMap;
 use std::{io, sync::Arc};
 use sui_network::{
     api::{Validator, ValidatorServer},
@@ -89,7 +87,6 @@ impl AuthorityServer {
             consensus_client,
             state.name,
             Box::new(Arc::new(ConnectionMonitorStatusForTests {})),
-            Arc::new(ArcSwap::new(Arc::new(HashMap::new()))),
             ConsensusAdapterMetrics::new_test(),
         ));
 
