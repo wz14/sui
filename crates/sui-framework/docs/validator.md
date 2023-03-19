@@ -2043,7 +2043,6 @@ Set the voting power of this validator, called only from validator_set.
         || <a href="validator.md#0x2_validator_is_equal_some_and_value">is_equal_some_and_value</a>(&other.metadata.next_epoch_protocol_pubkey_bytes,&self.metadata.protocol_pubkey_bytes)
         || <a href="validator.md#0x2_validator_is_equal_some_and_value">is_equal_some_and_value</a>(&other.metadata.next_epoch_network_pubkey_bytes,&self.metadata.network_pubkey_bytes)
         || <a href="validator.md#0x2_validator_is_equal_some_and_value">is_equal_some_and_value</a>(&other.metadata.next_epoch_worker_pubkey_bytes,&self.metadata.worker_pubkey_bytes)
-    // TODO[ben] - What about primary_address & worker_address?
 }
 </code></pre>
 

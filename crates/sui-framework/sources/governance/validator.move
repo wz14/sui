@@ -587,7 +587,6 @@ module sui::validator {
             || is_equal_some_and_value(&other.metadata.next_epoch_protocol_pubkey_bytes,&self.metadata.protocol_pubkey_bytes)
             || is_equal_some_and_value(&other.metadata.next_epoch_network_pubkey_bytes,&self.metadata.network_pubkey_bytes)
             || is_equal_some_and_value(&other.metadata.next_epoch_worker_pubkey_bytes,&self.metadata.worker_pubkey_bytes)
-        // TODO[ben] - What about primary_address & worker_address?
     }
 
     fun is_equal_some_and_value<T>(a: &Option<T>, b: &T): bool {

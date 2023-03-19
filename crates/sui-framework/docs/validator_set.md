@@ -684,7 +684,7 @@ processed at the end of epoch.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="validator_set.md#0x2_validator_set_assert_no_pending_or_actice_duplicates">assert_no_pending_or_actice_duplicates</a>(self: &<a href="validator_set.md#0x2_validator_set_ValidatorSet">ValidatorSet</a>, <a href="validator.md#0x2_validator">validator</a>: &Validator) {
-    // Validator here must be active or pending, and thus must be identified <b>as</b> duplicated exactly once.
+    // Validator here must be active or pending, and thus must be identified <b>as</b> duplicate exactly once.
     <b>assert</b>!(
         <a href="validator_set.md#0x2_validator_set_count_duplicates_vec">count_duplicates_vec</a>(&self.active_validators, <a href="validator.md#0x2_validator">validator</a>) +
             <a href="validator_set.md#0x2_validator_set_count_duplicates_tablevec">count_duplicates_tablevec</a>(&self.pending_active_validators, <a href="validator.md#0x2_validator">validator</a>) == 1,

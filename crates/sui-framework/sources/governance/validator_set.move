@@ -232,7 +232,7 @@ module sui::validator_set {
     }
 
     public(friend) fun assert_no_pending_or_actice_duplicates(self: &ValidatorSet, validator: &Validator) {
-        // Validator here must be active or pending, and thus must be identified as duplicated exactly once.
+        // Validator here must be active or pending, and thus must be identified as duplicate exactly once.
         assert!(
             count_duplicates_vec(&self.active_validators, validator) +
                 count_duplicates_tablevec(&self.pending_active_validators, validator) == 1,
