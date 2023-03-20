@@ -671,10 +671,10 @@ impl Signature {
     where
         T: Serialize,
     {
-        Signer::sign(
-            secret,
-            &bcs::to_bytes(&value).expect("Message serialization should not fail"),
-        )
+        let mut hasher = DefaultHash::default();
+        hasher.update(&bcs::to_bytes(&value).expect("Message serialization should not fail"));
+        let hashed = hasher.finalize();
+        Signer::sign(secret, &hashed.digest)
     }
 
     /// Parse [enum CompressedSignature] from trait SuiSignature `flag || sig || pk`.
@@ -1004,10 +1004,6 @@ pub trait SuiSignature: Sized + ToFromBytes {
     fn public_key_bytes(&self) -> &[u8];
     fn scheme(&self) -> SignatureScheme;
 
-    fn verify<T>(&self, value: &T, author: SuiAddress) -> SuiResult<()>
-    where
-        T: Signable<Vec<u8>>;
-
     fn verify_secure<T>(&self, value: &IntentMessage<T>, author: SuiAddress) -> SuiResult<()>
     where
         T: Serialize;
@@ -1030,27 +1026,16 @@ impl<S: SuiSignatureInner + Sized> SuiSignature for S {
         S::PubKey::SIGNATURE_SCHEME
     }
 
-    fn verify<T>(&self, value: &T, author: SuiAddress) -> SuiResult<()>
-    where
-        T: Signable<Vec<u8>>,
-    {
-        // Currently done twice - can we improve on this?;
-        let (sig, pk) = &self.get_verification_inputs(author)?;
-        let mut message = Vec::new();
-        value.write(&mut message);
-        pk.verify(&message[..], sig)
-            .map_err(|e| SuiError::InvalidSignature {
-                error: format!("{}", e),
-            })
-    }
-
     fn verify_secure<T>(&self, value: &IntentMessage<T>, author: SuiAddress) -> Result<(), SuiError>
     where
         T: Serialize,
     {
-        let message = bcs::to_bytes(&value).expect("Message serialization should not fail");
+        let mut hasher = DefaultHash::default();
+        hasher.update(&bcs::to_bytes(&value).expect("Message serialization should not fail"));
+        let hashed = hasher.finalize();
+
         let (sig, pk) = &self.get_verification_inputs(author)?;
-        pk.verify(&message[..], sig)
+        pk.verify(&hashed.digest, sig)
             .map_err(|e| SuiError::InvalidSignature {
                 error: format!("{}", e),
             })

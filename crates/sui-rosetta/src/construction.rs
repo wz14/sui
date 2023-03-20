@@ -5,6 +5,7 @@ use axum::extract::State;
 use axum::{Extension, Json};
 use axum_extra::extract::WithRejection;
 use fastcrypto::encoding::{Encoding, Hex};
+use fastcrypto::hash::HashFunction;
 use futures::StreamExt;
 
 use shared_crypto::intent::{Intent, IntentMessage};
@@ -13,7 +14,7 @@ use sui_json_rpc_types::{
 };
 use sui_sdk::rpc_types::SuiExecutionStatus;
 use sui_types::base_types::SuiAddress;
-use sui_types::crypto::{SignatureScheme, ToFromBytes};
+use sui_types::crypto::{DefaultHash, SignatureScheme, ToFromBytes};
 use sui_types::error::SuiError;
 use sui_types::messages::{Transaction, TransactionData, TransactionDataAPI};
 use sui_types::signature::GenericSignature;
@@ -65,12 +66,15 @@ pub async fn payloads(
         .try_into_data(metadata)?;
     let intent_msg = IntentMessage::new(Intent::default(), data);
     let intent_msg_bytes = bcs::to_bytes(&intent_msg)?;
+    let mut hasher = DefaultHash::default();
+    hasher.update(intent_msg_bytes);
+    let digest = hasher.finalize();
 
     Ok(ConstructionPayloadsResponse {
-        unsigned_transaction: Hex::from_bytes(&intent_msg_bytes),
+        unsigned_transaction: Hex::from_bytes(&digest.digest),
         payloads: vec![SigningPayload {
             account_identifier: address.into(),
-            hex_bytes: Hex::encode(bcs::to_bytes(&intent_msg)?),
+            hex_bytes: Hex::encode(digest.digest),
             signature_type: Some(SignatureType::Ed25519),
         }],
     })
