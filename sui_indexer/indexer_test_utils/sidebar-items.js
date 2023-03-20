@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["drop_all_tables","reset_database","start_test_indexer"]};
